@@ -729,35 +729,37 @@ public static class Noise {
 		return sum * (1f / range);
 	}
 
-	public static int[] GenerateHash(int size, int seed) {
-		System.Random random = new System.Random(seed);
-		int[] hash = new int[size];
+	private static void shuffle(ref int[] arr, System.Random random) {
+        for (int t = 0; t < arr.Length; t++ ) {
+            int tmp = arr[t];
+            int r = random.Range(t, arr.Length);
+            arr[t] = arr[r];
+            arr[r] = tmp;
+        }
+    }
+
+	public static int[] GenerateHash(int size, System.Random random) {
+		int[] hash_half = new int[size];
+		int[] hash = new int[2 * size];
 
 		for (int i = 0; i < size; i++) {
-			hash[i] = random.Next(size);
+			hash_half[i] = i;
 		}
+		shuffle(ref hash_half, random);
+
+		hash_half.CopyTo(hash, 0);
+		hash_half.CopyTo(hash, size);
 
 		return hash;
+	}
+
+	public static int[] GenerateHash(int size, int seed) {
+		System.Random random = new System.Random(seed);
+		GenerateHash(size, random);
 	}
 
 	public static int[] GenerateHash(int size) {
 		System.Random random = new System.Random();
-		int[] hash = new int[size];
-
-		for (int i = 0; i < size; i++) {
-			hash[i] = random.Next(size);
-		}
-
-		return hash;
-	}
-
-	public static int[] GenerateHash(int size, System.Random random) {
-		int[] hash = new int[size];
-
-		for (int i = 0; i < size; i++) {
-			hash[i] = random.Next(size);
-		}
-
-		return hash;
+		GenerateHash(size, random);
 	}
 }

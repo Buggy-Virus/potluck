@@ -651,11 +651,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8893d01f1bb6d0f498b7f893ddc7516f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MAP_HEIGHT: 10
+  MAP_HEIGHT: 20
   MAP_WIDTH: 100
   MAP_LENGTH: 100
-  FREQUENCY: 6
-  OCTAVES: 1
+  FREQUENCY: 3
+  OCTAVES: 5
   LACUNARITY: 2
   PERSISTENCE: 0.5
   TEST_PREFAB: {fileID: 5596829869347385199, guid: c049c52626347a245908eb1ec107ea43,

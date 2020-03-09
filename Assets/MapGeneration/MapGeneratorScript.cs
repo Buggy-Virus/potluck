@@ -6,8 +6,7 @@ using UnityEngine;
 public class MapGeneratorScript : MonoBehaviour
 {
     public int MAP_HEIGHT = 100;
-    public int MAP_WIDTH = 100;
-    public int MAP_LENGTH = 100;
+    public int MAP_SIZE = 100;
 
     public float FREQUENCY = 3f;
     public int OCTAVES = 5;
@@ -17,40 +16,30 @@ public class MapGeneratorScript : MonoBehaviour
     public GameObject TEST_PREFAB;
     public GameObject EMPTY_PREFAB;
 
-    bool mapExists = false;
     System.Random random;
-    int[] hash;
+    bool mapExists = false;
 
-    public void GenerateMap(int[] hash, 
-                     int height, int width, int length, 
+    public void GenerateMap2d( 
+                     int height, int size, 
                      float frequency, int octaves, float lacunarity, float persistence) {
-        for (int i = 0; i < height; i++) {
-            GameObject row = Instantiate(EMPTY_PREFAB, gameObject.transform);
-            row.name = "row_" + i;
-            for (int j = 0; j < width; j++) {
-                for (int k = 0; k < length; k++) {
-                    Vector3 currentPoint = new Vector3(j, i, k);
-                    NoiseSample currentPointNoise = Noise.Sum(Noise.Simplex3D, currentPoint, ref hash, frequency, octaves, lacunarity, persistence);
+        float stepSize = 1f / size;
 
-                    if (currentPointNoise.value >= 0) {
-                        Instantiate(TEST_PREFAB, currentPoint, Quaternion.identity, row.transform);
-                    }
+        int offset = random.Next(0, 100);
+
+        Vector3 point00 = new Vector3(offset, offset);
+        Vector3 point10 = new Vector3(offset + 1, offset);
+        Vector3 point01 = new Vector3(offset, offset + 1);
+        Vector3 point11 = new Vector3(offset + 1, offset + 1);
+        for (int z = 0; z < size; z++) {
+            Vector3 point0 = Vector3.Lerp(point00, point01, z * stepSize);
+            Vector3 point1 = Vector3.Lerp(point10, point11, z * stepSize);
+            for (int x = 0; x < size; x++) {
+                Vector3 point = Vector3.Lerp(point0, point1, x * stepSize);
+                float sample = Noise.Sum(Noise.Simplex2D, point, frequency, octaves, lacunarity, persistence).value;
+                int y = (int)(height * (sample * 0.5f + 0.5f));
+                for (int i = 0; i < y; i++) {
+                    Instantiate(TEST_PREFAB, new Vector3(x, i, z), Quaternion.identity, gameObject.transform);
                 }
-            }
-        }
-
-        mapExists = true;
-    }
-
-    public void GenerateMap2d(int[] hash, 
-                     int height, int width, int length, 
-                     float frequency, int octaves, float lacunarity, float persistence) {
-        for (int i = 0; i < width; i++) {
-            for (int j = 0; j < length; j++) {
-                // NoiseSample currentPointNoise = Noise.Sum(Noise.Simplex2D, new Vector3(i, j), ref hash, frequency, octaves, lacunarity, persistence);
-                NoiseSample currentPointNoise = Noise.Simplex2D(new Vector3(i / 10, j / 10), frequency, ref hash);
-                float currentPointHeight = (int)(height * ((currentPointNoise.value + 1) / 2));
-                Instantiate(TEST_PREFAB, new Vector3(i, currentPointHeight, j), Quaternion.identity, gameObject.transform);
             }
         }
 
@@ -65,27 +54,19 @@ public class MapGeneratorScript : MonoBehaviour
         mapExists = false;
     }
 
-    public void TestTerrainGeneration() {
-        if (mapExists) {
-            ClearMap();
-        }
-        GenerateMap(hash, MAP_HEIGHT, MAP_WIDTH, MAP_LENGTH, FREQUENCY, OCTAVES, LACUNARITY, PERSISTENCE);
-    }
-
     public void TestTerrainGeneration2d() {
         if (mapExists) {
             ClearMap();
+            random = new System.Random();
         }
-        GenerateMap2d(hash, MAP_HEIGHT, MAP_WIDTH, MAP_LENGTH, FREQUENCY, OCTAVES, LACUNARITY, PERSISTENCE);
+        GenerateMap2d(MAP_HEIGHT, MAP_SIZE, FREQUENCY, OCTAVES, LACUNARITY, PERSISTENCE);
     }
 
     void Start() {
         random = new System.Random();
-        hash = Noise.GenerateHash(256, random);
     }
 
-    void Update()
-    {
+    void Update() {
         
     }
 }

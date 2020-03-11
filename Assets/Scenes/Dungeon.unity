@@ -632,6 +632,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1265579058}
   - component: {fileID: 1265579057}
+  - component: {fileID: 1265579059}
   m_Layer: 0
   m_Name: Map
   m_TagString: Untagged
@@ -661,6 +662,7 @@ MonoBehaviour:
     type: 3}
   EMPTY_PREFAB: {fileID: 3806278205465784993, guid: a5554f9df6e17f84da66abf750240218,
     type: 3}
+  terrainScript: {fileID: 1265579059}
 --- !u!4 &1265579058
 Transform:
   m_ObjectHideFlags: 0
@@ -675,6 +677,20 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1265579059
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1265579056}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bab7948d335cde4299ecb671c702711, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  CUBE_PLACEHOLDER: {fileID: 5596829869347385199, guid: c049c52626347a245908eb1ec107ea43,
+    type: 3}
 --- !u!1 &1527428430
 GameObject:
   m_ObjectHideFlags: 0

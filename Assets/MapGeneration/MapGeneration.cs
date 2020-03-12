@@ -3,27 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MapGeneratorScript : MonoBehaviour
-{
-    public int MAP_HEIGHT = 100;
-    public int MAP_SIZE = 100;
-
-    public float FREQUENCY = 3f;
-    public int OCTAVES = 5;
-    public float LACUNARITY = 2f;
-    public float PERSISTENCE = 0.5f;
-
-    public GameObject EMPTY_PREFAB;
-
-    public Terrain terrainScript;
-
-    public int[,,] mapSkeleton;
-
-    System.Random random;
-    bool mapExists = false;
-
-    public int[,,] GenereateDepthMap2D(int height, int size,
-                                       float frequency, int octaves, float lacunarity, float persistence) {
+public class MapGeneration {
+    static public int[,,] GenereateDepthMap2D(int height, int size,
+                                       float frequency, int octaves, float lacunarity, float persistence,
+                                       System.Random random) {
         int[,,] depthMap = new int[size, height, size];
 
         float stepSize = 1f / size;
@@ -51,8 +34,9 @@ public class MapGeneratorScript : MonoBehaviour
         return depthMap;
     }
 
-    public float[,,] GenerateValueMap(int height, int size,
-                                    float frequency, int octaves, float lacunarity, float persistence) {
+    static public float[,,] GenerateValueMap(int height, int size,
+                                    float frequency, int octaves, float lacunarity, float persistence,
+                                    System.Random random) {
         float[,,] valueMap = new float[size, size, size];
 
         float stepSize = 1f / size;
@@ -88,7 +72,7 @@ public class MapGeneratorScript : MonoBehaviour
         return valueMap;
     }
 
-    public int[,,] DepthMapToSkeleton(int[,,] depthMap, ITTMethod terrainMethod) {
+    static public int[,,] DepthMapToSkeleton(int[,,] depthMap, ITTMethod terrainMethod) {
         int xSize = depthMap.GetLength(0);
         int ySize = depthMap.GetLength(1);
         int zSize = depthMap.GetLength(2);
@@ -105,7 +89,7 @@ public class MapGeneratorScript : MonoBehaviour
         return skeleton;
     }
 
-    public int[,,] ValueMapToSkeleton(float[,,] valueMap, VTTMethod terrainMethod) {
+    static public int[,,] ValueMapToSkeleton(float[,,] valueMap, VTTMethod terrainMethod) {
         int xSize = valueMap.GetLength(0);
         int ySize = valueMap.GetLength(1);
         int zSize = valueMap.GetLength(2);
@@ -120,56 +104,5 @@ public class MapGeneratorScript : MonoBehaviour
         }
 
         return skeleton;
-    }
-
-    public void DrawSkeleton(int[,,] skeleton) {
-        for (int y = 0; y < skeleton.GetLength(1); y++) {
-            GameObject row = Instantiate(EMPTY_PREFAB, gameObject.transform);
-            row.name = "row_" + y;
-            for (int x = 0; x < skeleton.GetLength(0); x++) {
-                for (int z = 0; z < skeleton.GetLength(2); z++) {
-                    if (skeleton[x, y, z] > 0) {
-                        Instantiate(terrainScript.terrainDict[skeleton[x, y, z]], new Vector3(x, y, z), Quaternion.identity, row.transform);
-                    }
-                }
-            }
-        }
-        mapExists = true;
-    }
-
-    public void ClearMap() {
-        foreach (Transform child in gameObject.transform) {
-            Destroy(child.gameObject);
-        }
-
-        mapExists = false;
-    }
-
-    public void TestTerrainGeneration2d() {
-        if (mapExists) {
-            ClearMap();
-            random = new System.Random();
-        }
-        int[,,] depthMap = GenereateDepthMap2D(MAP_HEIGHT, MAP_SIZE, FREQUENCY, OCTAVES, LACUNARITY, PERSISTENCE);
-        int[,,] skeleton = DepthMapToSkeleton(depthMap, terrainScript.GenerationTestTerrain);
-        DrawSkeleton(skeleton);
-    }
-
-    public void TestTerrainGeneration() {
-        if (mapExists) {
-            ClearMap();
-            random = new System.Random();
-        }
-        float[,,] valueMap = GenerateValueMap(MAP_HEIGHT, MAP_SIZE, FREQUENCY, OCTAVES, LACUNARITY, PERSISTENCE);
-        int[,,] skeleton = ValueMapToSkeleton(valueMap, terrainScript.GenerationTestTerrain);
-        DrawSkeleton(skeleton);
-    }
-
-    void Start() {
-        random = new System.Random();
-    }
-
-    void Update() {
-        
     }
 }

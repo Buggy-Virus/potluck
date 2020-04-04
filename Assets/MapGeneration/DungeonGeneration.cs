@@ -43,9 +43,9 @@ public struct Room {
     public List<Portal> portals;
 }
 
-public struct ReqRoom {
+public struct RequiredRoom {
     public int type;
-    public Vector3 depRoomPoint;
+    public Point depRoomPoint;
 }
 
 public struct RoomPrefab {
@@ -58,11 +58,15 @@ public struct RoomPrefab {
     public int zMin;
 
     public int type;
-    public List<ReqRoom> requiredRooms;
+    public List<RequiredRoom> requiredRooms;
 }
 
 public struct RoomSkeleton{
     public int[,,] skeleton;
+
+    public int xLength;
+    public int yLength;
+    public int zLength;
 
     public List<Corner> corners;
     public List<Face> faces;
@@ -92,8 +96,8 @@ public struct SuperMap {
     public float verticalAlignMent;
     public float parallelism;
 
-    public List<ReqRoom> requiredRooms;
-    public List<RoomWeight> roomWeights; 
+    public List<RequiredRoom> requiredRooms;
+    public List<Tuple<double, int>> roomWeights; 
 
     public Dictionary<int, int> roomMaxes;
     public Dictionary<int, int> roomCounts;
@@ -107,6 +111,10 @@ public class DungeonGeneration {
     static Dictionary<int, RoomPrefab> rooms = new Dictionary<int, RoomPrefab>{
 
     };
+
+    static double Distance(Point a, Point b) {
+        return Math.Sqrt(Math.Pow(a.x - b.x, 2) + Math.Pow(a.y - b.y, 2) + Math.Pow(a.z - b.z, 2));
+    }
 
     static Point PickNextLocation(SuperMap superMap, System.Random random) {
         int openFaceIndex = random.Next(superMap.openFaces.Count());
@@ -130,11 +138,6 @@ public class DungeonGeneration {
         }
 
         return nextLocation;
-    }
-
-    static int PickRoom(System.Random random, Vector3 origin, Vector3 end, List<int> roomQueue, List<RoomWeight> roomWeights) {
-
-        return 0;
     }
 
     static RoomPrefab GetRoomPrefab(int type) {
@@ -389,6 +392,39 @@ public class DungeonGeneration {
         }
     }
 
+    static int PickNextRoom(SuperMap superMap, System.Random random, Tuple<Point, Point> nextRoomBounds, Point nextRoomLocation) {
+        double total = 0;
+        List<Tuple<double, int>> cutoffs = new List<Tuple<double, int>>();
+
+        foreach (RequiredRoom requiredRoom in superMap.requiredRooms) { 
+            cutoffs.Add(new Tuple<double, int>(total, requiredRoom.type));
+            total += 1000 / Distance(nextRoomLocation, requiredRoom.depRoomPoint);;
+        }
+
+        if (superMap.complexity < superMap.targetComplexity) {
+            foreach (Tuple<double, int> roomWeight in superMap.roomWeights) {
+                int type = roomWeight.Item2;
+                if (superMap.roomCounts[type] < superMap.roomMaxes[type]) {
+                    cutoffs.Add(new Tuple<double, int>(total, type));
+                    total += roomWeight.Item1;
+                }
+            }
+        }
+
+        double roll = random.NextDouble() * total;
+        int result = 0;
+
+        foreach (Tuple<double, int> cutoff in cutoffs) {
+            if (roll > cutoff.Item1){
+                result = cutoff.Item2;
+            } else {
+                break;
+            }
+        }
+
+        return result;
+    }
+
     static Point PickAnchorPoint(SuperMap superMap, System.Random random, Point nextRoomLocation, Tuple<Point, Point> nextRoomBounds, RoomSkeleton nextRoomSkeleton) {
         int xMaxDistance = nextRoomBounds.Item2.x - nextRoomBounds.Item1.x - nextRoomSkeleton.xLength;
         int zMaxDistance = nextRoomBounds.Item2.z - nextRoomBounds.Item1.z - nextRoomSkeleton.zLength;
@@ -423,6 +459,26 @@ public class DungeonGeneration {
             x = nextRoomLocation.x + (int)(superMap.horizontalAlignMent * (random.NextDouble() - 0.5)) - (nextRoomSkeleton.xLength / 2);
             z = nextRoomLocation.z + (int)(superMap.horizontalAlignMent * (random.NextDouble() - 0.5)) - (nextRoomSkeleton.zLength / 2);
         }
+
+        if (x < nextRoomBounds.Item1.x) {
+            x = nextRoomBounds.Item1.x;
+        } else if (x > nextRoomBounds.Item2.x - nextRoomSkeleton.xLength) {
+            x = nextRoomBounds.Item2.x - nextRoomSkeleton.xLength;
+        }
+
+        if (z < nextRoomBounds.Item1.z) {
+            z = nextRoomBounds.Item1.z;
+        } else if (z > nextRoomBounds.Item2.z - nextRoomSkeleton.zLength) {
+            z = nextRoomBounds.Item2.z - nextRoomSkeleton.zLength;
+        }
+
+        if (y < nextRoomBounds.Item1.y) {
+            y = nextRoomBounds.Item1.y;
+        } else if (y > nextRoomBounds.Item2.y - nextRoomSkeleton.yLength) {
+            y = nextRoomBounds.Item2.y - nextRoomSkeleton.yLength;
+        }
+
+        return new Point(x, y, z);
     }
 
     static SuperMap PlaceRoom(SuperMap superMap, RoomSkeleton roomSkeleton, Point anchorPoint, RoomPrefab roomPrefab) {
@@ -457,11 +513,11 @@ public class DungeonGeneration {
 
     static SuperMap GenerateDungeonRooms(SuperMap superMap, System.Random random) {
         int firstRequiredRoomInded = random.Next(0, superMap.requiredRooms.Count);
-        ReqRoom firstRequiredRoom = superMap.requiredRooms[firstRequiredRoomInded];
+        RequiredRoom firstRequiredRoom = superMap.requiredRooms[firstRequiredRoomInded];
         RoomPrefab firstRoomPrefab = GetRoomPrefab(firstRequiredRoom.type);
         superMap.requiredRooms.RemoveAt(firstRequiredRoomInded);
 
-        RoomSkeleton firstRoomSkeleton = GenerateRoomSkeleton(random, firstRoomPrefab, firstRoomPrefab.xMax, firstRoomPrefab.yMax, firstRoomPrefab.zMax);
+        RoomSkeleton firstRoomSkeleton = GenerateRoomSkeleton(random, firstRoomPrefab, new Tuple<Point, Point>(new Point(0,0,0), new Point(superMap.xSize, superMap.ySize, superMap.zSize)));
 
         superMap = PlaceRoom(superMap, firstRoomSkeleton, new Point(0, 0, 0), firstRoomPrefab);
 

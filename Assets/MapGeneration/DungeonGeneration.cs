@@ -24,17 +24,53 @@ public struct Face {
     public int direction;
 }
 
-public struct Portal {
+public class Portal {
+    public int type;
     public Point point;
     public int direction;
+    public Node node;
+    public bool connected;
+    public bool setup;
 }
 
-public struct Room {
+public struct Edge {
+    public Node source;
+    public Portal sourcePortal;
+    public Node sink;
+    public Portal sinkPortal;
+    public int lenght;
+    public int type;
+
+    public Edge(Node source_input, Portal sourcePortal_input, Node sink_input, Portal sinkPortal_input, int type_input) {
+        this.source = source_input;
+        this.sourcePortal = sourcePortal_input;
+        this.sink = sink_input;
+        this.sinkPortal = sinkPortal_input;
+        this.type = type_input;
+        this.lenght = 0;
+    }
+}
+
+public class Node {
+    // 0 is start
+    // 1 is objective
+    public int id;
+    public Point anchorPoint;
+    public List<Portal> portals;
+    public List<Edge> edges;
+    public int type;
+
+    public int cost;
+    
+}
+
+public class Room {
     public int type;
 
     public Point anchorPoint;
     public List<Face> faces;
     public List<Portal> portals;
+    public List<Node> nodes;
 }
 
 public struct RoomPrefab {
@@ -50,7 +86,7 @@ public struct RoomPrefab {
     public List<Tuple<int, Point>> requiredRooms;
 }
 
-public struct RoomSkeleton{
+public class RoomSkeleton{
     public int[,,] skeleton;
 
     public int xLength;
@@ -59,9 +95,10 @@ public struct RoomSkeleton{
 
     public List<Face> faces;
     public List<Portal> portals;
+    public List<Node> nodes;
 }
 
-public struct SuperMap {
+public class SuperMap {
     public int xSize;
     public int ySize;
     public int zSize;
@@ -87,6 +124,11 @@ public struct SuperMap {
     
     public List<Room> rooms;
     public List<Face> openFaces;
+    public List<Portal> portals;
+    public List<Node> nodes;
+    public List<Edge> edges;
+
+    public int[,] graph;
 }
 
 public class DungeonGeneration {
@@ -480,6 +522,7 @@ public class DungeonGeneration {
         room.anchorPoint = anchorPoint;
         room.faces = roomSkeleton.faces;
         room.portals = roomSkeleton.portals;
+        room.nodes = roomSkeleton.nodes;
 
         superMap.rooms.Add(room);
         if (superMap.roomCounts.ContainsKey(room.type)) {
@@ -489,6 +532,8 @@ public class DungeonGeneration {
         }
         superMap.requiredRooms = superMap.requiredRooms.Concat(roomPrefab.requiredRooms).ToList();
         superMap.openFaces = superMap.openFaces.Concat(room.faces).ToList();
+        superMap.portals = superMap.portals.Concat(room.portals).ToList();
+        superMap.nodes = superMap.nodes.Concat(room.nodes).ToList();
         
         return superMap;
     }
@@ -513,6 +558,125 @@ public class DungeonGeneration {
             Point nextRoomAnchorPoint = PickAnchorPoint(superMap, random, nextRoomLocation, nextRoomBounds, nextRoomSkeleton); 
             superMap = PlaceRoom(superMap, nextRoomSkeleton, nextRoomAnchorPoint, nextRoomPrefab);
         }
+
+        return superMap;
+    }
+
+    static int[] Djikstra(SuperMap superMap, int origin) {
+        bool[] visited = new bool[superMap.nodes.Count()];
+        int[] distanceFromOrigin = new int[superMap.nodes.Count()];
+        for (int i = 0; i < distanceFromOrigin.Count(); i++) {
+            distanceFromOrigin[i] = int.MaxValue;
+            visited[i] = false;
+        }
+
+        distanceFromOrigin[origin] = 0;
+
+        List<Tuple<int, int>> assigned = new List<Tuple<int, int>>();
+        assigned.Add(new Tuple<int, int>(origin, 0));
+
+        while (assigned.Count() > 0) {
+            int minIndex = -1;
+            int minDist = int.MaxValue;
+            for (int i = 0; i < distanceFromOrigin.Count(); i++) {
+                if (!visited[i] && distanceFromOrigin[i] < minDist) {
+                    minIndex = i;
+                    minDist = distanceFromOrigin[i];
+                }
+            }
+
+            if (minIndex == -1) {
+                break;
+            }
+
+            for (int i = 0; i < superMap.graph.GetLength(1); i++) {
+                if (superMap.graph[minIndex,i] == 1) {
+                    int newDist = distanceFromOrigin[minIndex] + 1;
+                    if (newDist < distanceFromOrigin[i]) {
+                        distanceFromOrigin[i] = newDist;
+                    }
+                }
+            }
+
+            visited[minIndex] = true;
+        }
+
+        return distanceFromOrigin;
+    }
+
+    static SuperMap GenerateDungeonGraph(SuperMap superMap, System.Random random) {
+        superMap.graph = new int[superMap.nodes.Count(), superMap.nodes.Count()];
+
+        foreach (Node node in superMap.nodes) {
+            foreach (Edge edge in superMap.edges) {
+                superMap.graph[node.id, edge.sink.id] = edge.type;
+            }
+        }
+
+        List<Portal> unconnectedPortals = superMap.portals.GetRange(0, superMap.portals.Count);
+
+        foreach (Portal portal in superMap.portals) {
+            if (!portal.connected && unconnectedPortals.Count() > 1) {
+                double total = 0;
+                List<Tuple<double, int>> cutoffs = new List<Tuple<double, int>>();
+
+                int count = 0;
+                foreach (Portal eligiblePortal in unconnectedPortals) {
+                    if (eligiblePortal.type == portal.type) {
+                        cutoffs.Add(new Tuple<double, int>(total, count));
+                        total += Math.Pow(Distance(portal.point, eligiblePortal.point), 1.0);
+                    }
+                    count += 1;
+                }
+
+                double roll = random.NextDouble() * total;
+                int result = 0;
+
+                foreach (Tuple<double, int> cutoff in cutoffs) {
+                    if (roll > cutoff.Item1){
+                        result = cutoff.Item2;
+                    } else {
+                        break;
+                    }
+                }
+
+                Portal portalResult = unconnectedPortals[result]; 
+                superMap.graph[portal.node.id, portalResult.node.id] = portal.type;
+                superMap.graph[portalResult.node.id, portal.node.id] = portal.type;
+                Edge forwardEdge = new Edge(portal.node, portal, portalResult.node, portalResult, portal.type);
+                Edge backwardEdge = new Edge(portalResult.node, portalResult, portal.node, portal, portal.type);
+                portal.node.edges.Add(forwardEdge);
+                portalResult.node.edges.Add(backwardEdge);
+                portal.connected = true;
+                portalResult.connected = true;
+                unconnectedPortals.RemoveAt(result);
+                unconnectedPortals.Remove(portal);
+            }
+        }
+
+        int origin = 0;
+        List<int> goals = new List<int>();
+
+        foreach (Node node in superMap.nodes) {
+            if (node.type == 0) {
+                origin = node.id;
+                break;
+            } else if (node.type == 1) {
+                goals.Add(node.id);
+            }
+        }
+
+        int[] distanceFromOrigin = Djikstra(superMap, origin);
+        bool goalsReachable = true;
+        foreach (int goal in goals) {
+            goalsReachable = goalsReachable && distanceFromOrigin[goal] != int.MaxValue;
+        }
+        
+        
+
+        // Need a way to ensure the entrance and all goals have paths
+        // Prune some unnecessary hallways
+        // Place locks and keys such that all keys can be accessed before locks
 
         return superMap;
     }

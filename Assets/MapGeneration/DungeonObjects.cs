@@ -17,7 +17,7 @@ public class Portal {
     public Point point;
     public int direction;
     public Node node;
-    public bool connected;
+    public int edgeCount;
     public bool setup;
 }
 
@@ -26,8 +26,17 @@ public struct Edge {
     public Portal sourcePortal;
     public Node sink;
     public Portal sinkPortal;
-    public int lenght;
+    public int length;
     public int type;
+
+    public Edge(Portal sourcePortal_input, Portal sinkPortal_input) {
+        this.sourcePortal = sourcePortal_input;
+        this.sinkPortal = sinkPortal_input;
+        this.source = sourcePortal_input.node;
+        this.sink = sinkPortal_input.node;
+        this.type = sourcePortal_input.type;
+        this.length = 0;
+    }
 
     public Edge(Node source_input, Portal sourcePortal_input, Node sink_input, Portal sinkPortal_input, int type_input) {
         this.source = source_input;
@@ -35,7 +44,7 @@ public struct Edge {
         this.sink = sink_input;
         this.sinkPortal = sinkPortal_input;
         this.type = type_input;
-        this.lenght = 0;
+        this.length = 0;
     }
 }
 
@@ -92,5 +101,18 @@ public class Room {
         this.faces = roomSkeleton.faces;
         this.portals = roomSkeleton.portals;
         this.nodes = roomSkeleton.nodes;
+    }
+}
+
+public class Zone {
+    public int id;
+    public int type;
+
+    public List<Node> nodes;
+
+    public Zone(int id_input, int type_input) {
+        this.id = id_input;
+        this.type = type_input;
+        this.nodes = new List<Node>();
     }
 }

@@ -12,10 +12,13 @@ public class SuperMap {
     public int[,,] skeleton;
 
     public float targetRoomCount;
+    public int targetZoneSize;
+    public int zoneRange;
 
     public float roomCount;
     public float horizontalSparsity;
     public float verticalSparsity;
+    public float sparsityFactor;
     public float horizontalAlignMent;
     public float verticalAlignMent;
 
@@ -25,6 +28,7 @@ public class SuperMap {
     public Dictionary<int, int> roomMaxes;
     public Dictionary<int, int> roomCounts;
     
+    public List<Zone> zones;
     public List<Room> rooms;
     public List<Face> openFaces;
     public List<Portal> portals;
@@ -34,4 +38,5 @@ public class SuperMap {
     public int[,] naiveGraph;
     public int[,] roomGraph;
     public int[,] specialGraph;
+    public int[,] zoneGraph;
 }

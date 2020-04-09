@@ -120,7 +120,7 @@ public class DungeonGraph {
         return endPortal;
     }
 
-    public static SuperMap DefineZone(SuperMap superMap, System.Random random, int start, int zoneNum, int type, List<int> exclude) {
+    static SuperMap DefineZone(SuperMap superMap, System.Random random, int start, int zoneNum, int type, List<int> exclude) {
         int totalNodes = superMap.targetZoneSize + random.Next(0, superMap.zoneRange) - superMap.zoneRange / 2;
         Zone zone = new Zone(zoneNum, type);
         List<Portal> zonePortals = new List<Portal>();
@@ -268,7 +268,7 @@ public class DungeonGraph {
         return superMap;
     }
 
-    public static SuperMap PaintZoneEdges(SuperMap superMap, System.Random random, int currentZone, List<Edge> edges, List<int> AccessibleZones, bool first) {
+    static SuperMap PaintZoneEdges(SuperMap superMap, System.Random random, int currentZone, List<Edge> edges, List<int> AccessibleZones, bool first) {
         // we can tune how we choose the conditionals
         // 1 naive
         // 2 keyed

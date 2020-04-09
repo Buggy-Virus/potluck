@@ -37,7 +37,16 @@ public class DungeonGeneration {
         superMap.roomGraph = new int[superMap.nodes.Count(), superMap.nodes.Count()];
         superMap.specialGraph = new int[superMap.nodes.Count(), superMap.nodes.Count()];
 
-        DungeonGraph.InitializeRoomGraph(superMap);
+        superMap = DungeonGraph.InitializeRoomGraph(superMap);
+        List<int> goalNodes = new List<int>();
+        foreach (Node node in superMap.nodes) {
+            if (node.type == 1) {
+                goalNodes.Add(node.id);
+            }
+        }
+        superMap = DungeonGraph.CreateZones(superMap, random, goalNodes);
+        superMap = DungeonGraph.CreateZoneGraph(superMap, random);
+        superMap = DungeonGraph.AddEdgeConditions(superMap, random);
 
         return superMap;
     }

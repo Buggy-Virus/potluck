@@ -5,6 +5,30 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class DungeonGraph {
+    static bool IsConnected(int[,] graph) {
+        List<int> visited = new List<int>(){0};
+        List<int> queued = new List<int>();
+        for (int i = 0; i < graph.GetLength(0); i++) {
+            if (graph[0,i] > 0) {
+                visited.Add(i);
+                queued.Add(i);
+            }
+        }
+
+        while (queued.Count() > 0) {
+            int current = queued[0];
+            queued.RemoveAt(0);
+            for (int i = 0; i < graph.GetLength(0); i++) {
+                if (graph[0,i] > 0 && !visited.Contains(i)) {
+                    visited.Add(i);
+                    queued.Add(i);
+                }
+            }
+        }
+
+        return visited.Count() == graph.GetLength(0);
+    }
+
     static int[] Djikstra(int[,] graph, int origin) {
         int visitedCount = 0;
         bool[] visited = new bool[graph.GetLength(0)];
@@ -18,53 +42,6 @@ public class DungeonGraph {
 
         while (visitedCount >= visited.Count()) {
             int minIndex = -1;
-            int minDist = int.MaxValue;
-            for (int i = 0; i < distanceFromOrigin.Count(); i++) {
-                if (!visited[i] && distanceFromOrigin[i] < minDist) {
-                    minIndex = i;
-                    minDist = distanceFromOrigin[i];
-                }
-            }
-
-            if (minIndex == -1) {
-                break;
-            }
-
-            for (int i = 0; i < graph.GetLength(0); i++) {
-                if (graph[minIndex,i] == 1) {
-                    int newDist = distanceFromOrigin[minIndex] + 1;
-                    if (newDist < distanceFromOrigin[i]) {
-                        distanceFromOrigin[i] = newDist;
-                    }
-                }
-            }
-
-            visited[minIndex] = true;
-            visitedCount += 1;
-        }
-
-        return distanceFromOrigin;
-    }
-
-    static int[] Djikstra(Zone zone, Node origin) {
-        int visitedCount = 0;
-        bool[] visited = new bool[zone.nodes.Count()];
-        int[] distanceFromOrigin = new int[zone.nodes.Count()];
-
-        int minIndex = -1; 
-
-        for (int i = 0; i < distanceFromOrigin.Count(); i++) {
-            if (zone.nodes[i] == origin) {
-                distanceFromOrigin[i] = 0;
-                visited[i] = true;
-                minIndex = i;
-            } else {
-                distanceFromOrigin[i] = int.MaxValue;
-                visited[i] = false;
-            }
-        }
-
-        while (visitedCount >= visited.Count()) {
             int minDist = int.MaxValue;
             for (int i = 0; i < distanceFromOrigin.Count(); i++) {
                 if (!visited[i] && distanceFromOrigin[i] < minDist) {
@@ -160,11 +137,7 @@ public class DungeonGraph {
             if (endPortal == startPortal) { // Couldn't find an end portal
                 zonePortals.Remove(startPortal);
             } else {
-                startPortal.edgeCount += 1;
-                endPortal.edgeCount += 1;
                 Edge edge = new Edge(startPortal, endPortal);
-                startPortal.node.edges.Add(edge);
-                endPortal.node.edges.Add(edge);
                 superMap.naiveGraph[startPortal.node.id, endPortal.node.id] += 1;
                 superMap.naiveGraph[endPortal.node.id, startPortal.node.id] += 1;
 
@@ -175,6 +148,19 @@ public class DungeonGraph {
                 }
             }
         }
+
+        int xMid = 0;
+        int yMid = 0;
+        int zMid = 0;
+        foreach (Node node in zone.nodes) {
+            xMid += node.midPoint.x;
+            yMid += node.midPoint.y;
+            zMid += node.midPoint.z;
+        }
+        xMid /= zone.nodes.Count();
+        yMid /= zone.nodes.Count();
+        zMid /= zone.nodes.Count();
+        zone.midPoint = new Point(xMid, yMid, zMid);
 
         superMap.zones.Add(zone);
         return superMap;
@@ -209,8 +195,74 @@ public class DungeonGraph {
         return superMap;
     }
 
-    public static SuperMap CreateZoneGraph(SuperMap superMap) {
+    public static SuperMap CreateZoneGraph(SuperMap superMap, System.Random random) {
         superMap.zoneGraph = new int[superMap.zones.Count(), superMap.zones.Count()];
+        superMap.zoneEdgeGraph = new List<Edge>[superMap.zones.Count(), superMap.zones.Count()];
+
+        double distanceThreshold = superMap.sparsityFactor * 2;
+        bool connected = false;
+
+        while (!connected) {
+            foreach (Zone sourceZone in superMap.zones) {
+                foreach (Zone sinkZone in superMap.zones) {
+                    if (superMap.zoneGraph[sourceZone.id, sinkZone.id] == 0 && Utils.Distance(sourceZone.midPoint, sinkZone.midPoint) < distanceThreshold) { // Distance threshold check should have some randomness added to it
+                        int edgeRoll = superMap.targetZoneEdges + (random.Next(0, superMap.zoneEdgesRange) - superMap.zoneEdgesRange / 2);
+                        superMap.zoneGraph[sourceZone.id, sinkZone.id] = edgeRoll;
+                        superMap.zoneGraph[sinkZone.id, sourceZone.id] = edgeRoll;
+
+                        double sourceTotal = 0;
+                        List<Tuple<Portal, double>> sourceCutoffs = new List<Tuple<Portal, double>>();
+                        foreach(Node node in sourceZone.nodes) {
+                            foreach(Portal portal in node.portals) {
+                                sourceCutoffs.Add(new Tuple<Portal, double>(portal, sourceTotal));
+                                sourceTotal += Math.Pow(1.0 / Utils.Distance(sinkZone.midPoint, portal.point), 0.7); // This metric could be changed or tuned
+                            }
+                        }
+
+                        double sinkTotal = 0;
+                        List<Tuple<Portal, double>> sinkCutoffs = new List<Tuple<Portal, double>>();
+                        foreach(Node node in sinkZone.nodes) {
+                            foreach(Portal portal in node.portals) {
+                                sourceCutoffs.Add(new Tuple<Portal, double>(portal, sinkTotal));
+                                sinkTotal += Math.Pow(1.0 / Utils.Distance(sourceZone.midPoint, portal.point), 0.7); // This metric could be changed or tuned
+                            }
+                        }
+                        
+                        for (int i = 0; i < edgeRoll; i++) {
+                            double sourecRoll = random.NextDouble() * sourceTotal;
+                            Portal sourcePortal = new Portal();
+                            foreach (Tuple<Portal, double> cutoff in sourceCutoffs) {
+                                if (sourecRoll > cutoff.Item2) {
+                                    sourcePortal = cutoff.Item1;
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            double sinkRoll = random.NextDouble() * sinkTotal;
+                            Portal sinkPortal = new Portal();
+                            foreach (Tuple<Portal, double> cutoff in sinkCutoffs) {
+                                if (sinkRoll > cutoff.Item2) {
+                                    sinkPortal = cutoff.Item1;
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            Edge edge = new Edge(sourcePortal, sinkPortal);
+                            if (sourceZone.id < sinkZone.id) {
+                                superMap.zoneEdgeGraph[sourceZone.id, sinkZone.id].Add(edge);
+                            } else {
+                                superMap.zoneEdgeGraph[sinkZone.id, sourceZone.id].Add(edge);
+                            }
+                        }
+                    }
+                }
+
+                distanceThreshold += superMap.sparsityFactor;
+                connected = IsConnected(superMap.zoneGraph);
+            }
+        }        
 
         return superMap;
     }

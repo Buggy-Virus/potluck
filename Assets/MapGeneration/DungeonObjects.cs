@@ -45,6 +45,10 @@ public struct Edge {
         this.sinkPortal = sinkPortal_input;
         this.type = type_input;
         this.length = 0;
+        sourcePortal_input.node.edges.Add(this);
+        sinkPortal_input.node.edges.Add(this);
+        sourcePortal_input.edgeCount += 1;
+        sinkPortal_input.edgeCount += 1;
     }
 }
 
@@ -53,6 +57,7 @@ public class Node {
     // 1 is objective
     public int id;
     public int zone;
+    public Point midPoint;
     public Point anchorPoint;
     public List<Portal> portals;
     public List<Edge> edges;
@@ -107,6 +112,8 @@ public class Room {
 public class Zone {
     public int id;
     public int type;
+
+    public Point midPoint;
 
     public List<Node> nodes;
 

@@ -12,8 +12,12 @@ public class SuperMap {
     public int[,,] skeleton;
 
     public float targetRoomCount;
+
     public int targetZoneSize;
     public int zoneRange;
+
+    public int targetZoneEdges;
+    public int zoneEdgesRange;
 
     public float roomCount;
     public float horizontalSparsity;
@@ -39,4 +43,5 @@ public class SuperMap {
     public int[,] roomGraph;
     public int[,] specialGraph;
     public int[,] zoneGraph;
+    public List<Edge>[,] zoneEdgeGraph;
 }

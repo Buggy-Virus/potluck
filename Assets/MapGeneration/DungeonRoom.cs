@@ -381,12 +381,9 @@ public class DungeonRoom {
             }
         }
 
-        Room room = new Room();
+        Room room = new Room(roomSkeleton);
         room.type = roomPrefab.type;
         room.anchorPoint = anchorPoint;
-        room.faces = roomSkeleton.faces;
-        room.portals = roomSkeleton.portals;
-        room.nodes = roomSkeleton.nodes;
 
         superMap.rooms.Add(room);
         if (superMap.roomCounts.ContainsKey(room.type)) {

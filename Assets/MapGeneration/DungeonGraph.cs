@@ -73,7 +73,8 @@ public class DungeonGraph {
     public static SuperMap InitializeRoomGraph(SuperMap superMap) {
         foreach (Node node in superMap.nodes) {
             foreach (Edge edge in superMap.edges) {
-                superMap.roomGraph[node.id, edge.sink.id] = edge.type;
+                superMap.roomGraph[edge.source.node.id, edge.sink.node.id] = edge.type;
+                superMap.roomGraph[edge.sink.node.id, edge.source.node.id] = edge.type;
             }
         }
 
@@ -267,7 +268,115 @@ public class DungeonGraph {
         return superMap;
     }
 
-    public static SuperMap AddEdgeConditions(SuperMap superMap) {
+    public static SuperMap PaintZoneEdges(SuperMap superMap, System.Random random, int currentZone, List<Edge> edges, List<int> AccessibleZones, bool first) {
+        // we can tune how we choose the conditionals
+        // 1 naive
+        // 2 keyed
+        // 3 key in zone
+        // 4 skill based
+        // 5 unlockable one way
+        // 6 one directional slide
+        // List<Tuple<double, int>> cutoffs = new  List<Tuple<double, int>>(){ // This should be kicked out to utilities so it isn't created every time
+        //     new Tuple<double, int>(0, 1),
+        //     new Tuple<double, int>(0.08, 2),
+        //     new Tuple<double, int>(0.50, 3),
+        //     new Tuple<double, int>(0.60, 4),
+        //     new Tuple<double, int>(0.70, 5),
+        //     new Tuple<double, int>(0.85, 6)
+        // }; // This should be something in the superMap
+
+
+        if (first) {
+            Edge firstEdge = edges[random.Next(0, edges.Count())];
+            edges.Remove(firstEdge);
+            double firstRoll = random.NextDouble() * 0.5;
+            int firstConditional = 0;
+            foreach (Tuple<double, int> cutoff in superMap.zoneEdgeWeights) {
+                if (firstRoll > cutoff.Item1) {
+                    firstConditional = cutoff.Item2;
+                } else {
+                    break;
+                }
+            }
+            firstEdge.conditional = firstConditional;
+            if (firstConditional == 2) {
+                firstEdge.key = superMap.currentKey;
+                superMap.zones[AccessibleZones[random.Next(0, AccessibleZones.Count())]].keys.Add(superMap.currentKey);
+                superMap.currentKey += 1;
+            }
+        }
+
+        while (edges.Count() > 0) {
+            Edge edge = edges[random.Next(0, edges.Count())];
+            edges.Remove(edge);
+            double firstRoll = random.NextDouble();
+            int conditional = 0;
+            foreach (Tuple<double, int> cutoff in superMap.zoneEdgeWeights) {
+                if (firstRoll > cutoff.Item1) {
+                    conditional = cutoff.Item2;
+                } else {
+                    break;
+                }
+            } 
+            edge.conditional = conditional;
+            if (conditional == 2) {
+                edge.key = superMap.currentKey;
+                superMap.zones[AccessibleZones[random.Next(0, AccessibleZones.Count())]].keys.Add(superMap.currentKey);
+                superMap.currentKey += 1;
+            } else if (conditional == 3) {
+                edge.key = superMap.currentKey;
+                superMap.zones[currentZone].keys.Add(superMap.currentKey);
+                superMap.currentKey += 1;
+            }
+        }
+
+        return superMap;
+    }
+
+    public static SuperMap AddEdgeConditions(SuperMap superMap, System.Random random) {
+        int[] distanceFromOrigin = new int[superMap.zones.Count()];
+        bool[] visited = new bool[superMap.zones.Count()];
+        List<int> accessibleZones = new List<int>{0};
+        distanceFromOrigin[0] = 0;
+        visited[0] = true;
+
+        List<int> queued = new List<int>();
+        for (int i = 0; i < superMap.zoneGraph.GetLength(0); i++) {
+            if (superMap.zoneGraph[0,i] != 0) {
+                queued.Add(i);
+            }
+        }
+        
+        while (queued.Count() > 0) {
+            int current = queued[random.Next(0, queued.Count())];
+            queued.Remove(current);
+
+            List<int> adjacentAccessible = new List<int>();
+
+            for (int i = 0; i < superMap.zoneGraph.GetLength(0); i++) {
+                if (!visited[i] && superMap.zoneGraph[current, i] != 0) {
+                    queued.Add(i);
+                } else if (superMap.zoneGraph[current, i] != 0) {
+                    adjacentAccessible.Add(i);
+                }
+            }
+
+            bool first = true;
+            while (adjacentAccessible.Count() > 0) {
+                int adjacentZone = adjacentAccessible[random.Next(0, adjacentAccessible.Count())];
+                if (current < adjacentZone) {
+                    superMap = PaintZoneEdges(superMap, random, current, superMap.zoneEdgeGraph[current, adjacentZone], accessibleZones, first);
+                } else {
+                    superMap = PaintZoneEdges(superMap, random, current, superMap.zoneEdgeGraph[adjacentZone, current], accessibleZones, first);
+                }
+                adjacentAccessible.Remove(adjacentZone);
+                first = false;
+            }
+
+            visited[current] = true;
+            accessibleZones.Add(current);
+            
+        }
 
         return superMap;
     }

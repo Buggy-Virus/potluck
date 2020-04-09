@@ -29,6 +29,8 @@ public class SuperMap {
     public List<Tuple<int, Point>> requiredRooms;
     public List<Tuple<double, int>> roomWeights; 
 
+    public List<Tuple<double, int>> zoneEdgeWeights;
+
     public Dictionary<int, int> roomMaxes;
     public Dictionary<int, int> roomCounts;
     
@@ -38,6 +40,8 @@ public class SuperMap {
     public List<Portal> portals;
     public List<Node> nodes;
     public List<Edge> edges;
+
+    public int currentKey;
 
     public int[,] naiveGraph;
     public int[,] roomGraph;

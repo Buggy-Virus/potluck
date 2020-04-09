@@ -22,29 +22,20 @@ public class Portal {
 }
 
 public struct Edge {
-    public Node source;
-    public Portal sourcePortal;
-    public Node sink;
-    public Portal sinkPortal;
+    public Portal source;
+    public Portal sink;
     public int length;
     public int type;
+    public int conditional;
+    public int key;
 
     public Edge(Portal sourcePortal_input, Portal sinkPortal_input) {
-        this.sourcePortal = sourcePortal_input;
-        this.sinkPortal = sinkPortal_input;
-        this.source = sourcePortal_input.node;
-        this.sink = sinkPortal_input.node;
+        this.source = sourcePortal_input;
+        this.sink = sinkPortal_input;
         this.type = sourcePortal_input.type;
         this.length = 0;
-    }
-
-    public Edge(Node source_input, Portal sourcePortal_input, Node sink_input, Portal sinkPortal_input, int type_input) {
-        this.source = source_input;
-        this.sourcePortal = sourcePortal_input;
-        this.sink = sink_input;
-        this.sinkPortal = sinkPortal_input;
-        this.type = type_input;
-        this.length = 0;
+        this.conditional = 0;
+        this.key = 0;
         sourcePortal_input.node.edges.Add(this);
         sinkPortal_input.node.edges.Add(this);
         sourcePortal_input.edgeCount += 1;
@@ -116,6 +107,7 @@ public class Zone {
     public Point midPoint;
 
     public List<Node> nodes;
+    public List<int> keys;
 
     public Zone(int id_input, int type_input) {
         this.id = id_input;

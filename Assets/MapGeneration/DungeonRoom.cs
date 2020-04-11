@@ -34,6 +34,7 @@ public class DungeonRoom {
     }
 
     public static RoomSkeleton GenerateRoomSkeleton(System.Random random, RoomPrefab roomPrefab, Tuple<Point, Point> bounds) {
+        // Draws a cube, needs the most work
         int xMax = bounds.Item2.x - bounds.Item1.x;
         int yMax = bounds.Item2.y - bounds.Item1.y;
         int zMax = bounds.Item2.z - bounds.Item1.z;

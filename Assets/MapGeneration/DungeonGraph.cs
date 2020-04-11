@@ -70,11 +70,12 @@ public class DungeonGraph {
         return distanceFromOrigin;
     }
 
-    public static SuperMap InitializeRoomGraph(SuperMap superMap) {
-        foreach (Node node in superMap.nodes) {
-            foreach (Edge edge in superMap.edges) {
-                superMap.roomGraph[edge.source.node.id, edge.sink.node.id] = edge.type;
-                superMap.roomGraph[edge.sink.node.id, edge.source.node.id] = edge.type;
+    public static SuperMap InitializeRoomGraph(SuperMap superMap) { // IDK about this, I have to go over graph again
+        foreach (Room room in superMap.rooms) {
+            foreach (Node a in room.nodes) {
+                foreach (Node b in room.nodes) {
+                    superMap.roomGraph[a.id, b.id] = 1;
+                }
             }
         }
 

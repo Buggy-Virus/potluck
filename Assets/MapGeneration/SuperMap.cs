@@ -39,7 +39,6 @@ public class SuperMap {
     public List<Face> openFaces;
     public List<Portal> portals;
     public List<Node> nodes;
-    public List<Edge> edges;
 
     public int currentKey;
 

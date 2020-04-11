@@ -52,7 +52,8 @@ public class DungeonGeneration {
     }
 
     static SuperMap GenerateDungeonHallways(SuperMap superMap, System.Random random) {
-        
+        superMap = DungeonHallway.CreateEdgePaths(superMap);
+        superMap = DungeonHallway.PlaceHallways(superMap);
 
         return superMap;
     }

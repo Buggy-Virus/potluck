@@ -262,6 +262,18 @@ public class DungeonHallway {
         return superMap;
     }
 
+    public static SuperMap CreateEdgePaths(SuperMap superMap) {
+        foreach (Node node in superMap.nodes) {
+            foreach (Edge edge in node.edges) {
+                if (edge.source.node == node) {
+                    superMap = CreateEdgePath(superMap, edge);
+                }
+            }
+        }
+
+        return superMap;
+    }
+
     static int[,,] DrawHallwaySpaceSegment(int[,,] skeleton, Point point, int direction, int width, int height, int value) {
         if (direction == 1 || direction == 4) {
             Point point00 = new Point(point.x, point.y, point.z - width);
@@ -331,7 +343,7 @@ public class DungeonHallway {
         return skeleton;
     }
 
-    static (int[,,], int[,,]) DrawHallway(int[,,] wallSkeleton, int[,,] spaceSkeleton, Edge edge) {
+    static (int[,,], int[,,]) DrawHallwaySkeleton(int[,,] wallSkeleton, int[,,] spaceSkeleton, Edge edge) {
         int lastDirection = edge.directions[0];
         for (int i = 0; i < edge.path.Count(); i++) {
             Point point = edge.path[i];
@@ -405,8 +417,35 @@ public class DungeonHallway {
     }
 
     public static SuperMap PlaceHallways(SuperMap superMap) {
+        int[,,] hallwayWallSkeleton = new int[superMap.xSize, superMap.ySize, superMap.zSize];
+        int[,,] HallwaySpaceSkeleton = new int[superMap.xSize, superMap.ySize, superMap.zSize];
+
         foreach (Node node in superMap.nodes) {
-            
+            foreach (Edge edge in node.edges) {
+                if (edge.source.node == node) {
+                    (hallwayWallSkeleton, HallwaySpaceSkeleton) = DrawHallwaySkeleton(hallwayWallSkeleton, HallwaySpaceSkeleton, edge);
+                }
+            }
+        }
+
+        for (int i = 0; i < superMap.xSize; i++) {
+            for (int j = 0; j < superMap.ySize; j++) {
+                for (int k = 0; k < superMap.zSize; k++) {
+                    if (hallwayWallSkeleton[i, j, k] != 0 && superMap.skeleton[i, j, k] == 0) {
+                        superMap.skeleton[i, j, k] = hallwayWallSkeleton[i, j, k];
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < superMap.xSize; i++) {
+            for (int j = 0; j < superMap.ySize; j++) {
+                for (int k = 0; k < superMap.zSize; k++) {
+                    if (hallwayWallSkeleton[i, j, k] == 1) {
+                        superMap.skeleton[i, j, k] = 0;
+                    }
+                }
+            }
         }
 
         return superMap;

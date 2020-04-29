@@ -58,6 +58,8 @@ public class DungeonHallway {
         bool wentForward = true;
         Point current = edge.path.Last();
         int direction = edge.directions.Last();
+        // Check the durrent direction, and try to go forward. If it goes forward we update wentForward
+        // Also say we succeeded if the endpoint is in front of us
         if (direction == 1 && CheckDirection1(superMap, edge, current) || new Point(current.x + 1, current.y, current.z) == endPoint) {
             edge.path.Add(new Point(current.x + 1, current.y, current.z));
             edge.directions.Add(direction);
@@ -93,13 +95,17 @@ public class DungeonHallway {
     static (SuperMap, Edge, bool, int, int, int, Dictionary<Point, List<int>>) AttemptTurn(SuperMap superMap, Edge edge, int xLeft, int yLeft, int zLeft, Dictionary<Point, List<int>> failedTurns) {
         Point current = edge.path.Last();
         int direction = edge.directions.Last();
+        // Check if we've tried to turn at this point before and there are failed turns
         bool hasFailedTurns = failedTurns.ContainsKey(current);
 
         int xAbsLeft = Math.Abs(xLeft);
         int yAbsLeft = Math.Abs(yLeft);
         int zAbsLeft = Math.Abs(zLeft);
 
+        // Create scores for how desirable a direction is based upon how much distance
+        // is left in that direction
         int[] turnScores = new int[]{xLeft, yLeft, zLeft, -xLeft, -yLeft, -zLeft};
+        // current direction is set to unfeasible to start
         turnScores[direction - 1] = int.MinValue;
         int availableDirections = 5;
         if (hasFailedTurns) {
@@ -109,8 +115,13 @@ public class DungeonHallway {
             }
         }
 
+        // Look for a good turn until we exhaust all possible directions
+        // the turn direction with the best score is chosen first
+        // if we exhaust all available direction foundTurn will remain
+        // false and be returned
         bool foundTurn = false;
         while (availableDirections > 0 && !foundTurn) {
+            // Find the direction with the best score
             int max = int.MinValue;
             int maxIndex = -1;
             for (int i = 0; i < turnScores.Count(); i++) {
@@ -120,7 +131,10 @@ public class DungeonHallway {
                 }
             }
             
+            // check if we can turn in the direction of the best available direction
             if (CheckDirections[maxIndex](superMap, edge, current)) {
+                // If so, we found a turn and update the direction, and move the path
+                // one unit in the new direction
                 foundTurn = true;
                 direction = maxIndex + 1;
                 edge.directions.Add(direction);
@@ -144,8 +158,11 @@ public class DungeonHallway {
                     zLeft += 1;
                 }
             } else {
+                // Otherwise that's one less available direction, and we don't check
+                // that direction again
                 availableDirections -= 1;
                 turnScores[maxIndex] = int.MinValue;
+                // Add it to failed turns so we don't check it again if we end up here in the future
                 if (hasFailedTurns) {
                     failedTurns[current].Add(maxIndex + 1);
                 } else {
@@ -157,8 +174,20 @@ public class DungeonHallway {
         return (superMap, edge, foundTurn, xLeft, yLeft, zLeft, failedTurns);
     }
 
-    // Go back along the path
+    // Go back along the path, update whether a possible pathways are deadends
     static (Edge, int, int, int, Dictionary<Point, List<int>>) BackTrack(Edge edge, int xLeft, int yLeft, int zLeft, Dictionary<Point, List<int>> failedTurns) {
+        // If the direction changes during the backtrack, that means we were forced to backtrack a
+        // turn, meaning it was a failed turn
+        Point backTrackPoint = edge.path[edge.path.Count() - 2];
+        int lastDirection = edge.directions[edge.directions.Count() - 1];
+        if (lastDirection != edge.directions[edge.directions.Count() - 2]) {
+            if (failedTurns.ContainsKey(backTrackPoint)) {
+                failedTurns[backTrackPoint].Add(lastDirection);
+            } else {
+                failedTurns[backTrackPoint] = new List<int>() {lastDirection};
+            }
+        }
+        
         edge.path.RemoveAt(edge.path.Count() - 1);
         edge.directions.RemoveAt(edge.directions.Count() - 1);
 
@@ -316,7 +345,10 @@ public class DungeonHallway {
         return superMap;
     }
 
+    // Draw the open space contained within in a hallway
     static int[,,] DrawHallwaySpaceSegment(int[,,] skeleton, Point point, int direction, int width, int height, int value) {
+        // Depending on the direction define a point00 and point11 depending on hallway
+        // width and height and then mark all space between the two points as empty
         if (direction == 1 || direction == 4) {
             Point point00 = new Point(point.x, point.y, point.z - width);
             Point point11 = new Point(point.x, point.y + height, point.z + width);
@@ -346,7 +378,10 @@ public class DungeonHallway {
         return skeleton;
     }
 
+    // Draw the walls of a hallway
     static int[,,] DrawHallwayWallSegment(int[,,] skeleton, Point point, int direction, int width, int height, int value) {
+        // Depending on the direction, mark a point00 and point 11, and draw
+        // walls around the parameter of the rectangle the two points bound
         if (direction == 1 || direction == 4) {
             Point point00 = new Point(point.x, point.y - 1, point.z - 1 - width);
             Point point11 = new Point(point.x, point.y + 1 + height, point.z + 1 + width);
@@ -385,16 +420,23 @@ public class DungeonHallway {
         return skeleton;
     }
 
+    // For a given edge path, draw a skeleton of the hallway for both the walls and space
     static (int[,,], int[,,]) DrawHallwaySkeleton(int[,,] wallSkeleton, int[,,] spaceSkeleton, Edge edge) {
         int lastDirection = edge.directions[0];
+
+        // For every point along the path draw a wall and space segment
         for (int i = 0; i < edge.path.Count(); i++) {
             Point point = edge.path[i];
             int direction = edge.directions[i];
             wallSkeleton = DrawHallwayWallSegment(wallSkeleton, point, direction, edge.width, edge.height, 1); // currently writing a generic 1
-            spaceSkeleton = DrawHallwayWallSegment(spaceSkeleton, point, direction, edge.width, edge.height, 1); // Space skeleton could be recorded as simply hyper-rectangles where there are turns and where two edges intersect
+            spaceSkeleton = DrawHallwaySpaceSegment(spaceSkeleton, point, direction, edge.width, edge.height, 1); // Space skeleton could be recorded as simply hyper-rectangles where there are turns and where two edges intersect
 
+            // If the direction changes we need to extend the walls and space such that
+            // they end up connecting at the corner
             if (direction != lastDirection) {
+                // The last point before the current move is the pivot on which the turn is centered
                 Point lastPoint = edge.path[i - 1];
+                // We first extendthe hallway from the previous direction and point along the path
                 if (lastDirection == 1) {
                     for (int j = 1; j <= edge.width; j++) {
                         wallSkeleton = DrawHallwayWallSegment(wallSkeleton, new Point(lastPoint.x + j, lastPoint.y, lastPoint.z), lastDirection, edge.width, edge.height, 1);
@@ -416,7 +458,7 @@ public class DungeonHallway {
                         spaceSkeleton = DrawHallwaySpaceSegment(wallSkeleton, new Point(lastPoint.x - j, lastPoint.y, lastPoint.z), lastDirection, edge.width, edge.height, 1);
                     }
                 } else if (lastDirection == 5) {
-                    // Nothing happens here
+                    // Nothing happens here, it's heading down, so it already hits the corner
                 } else if (lastDirection == 6) {
                     for (int j = 1; j <= edge.width; j++) {
                         wallSkeleton = DrawHallwayWallSegment(wallSkeleton, new Point(lastPoint.x, lastPoint.y, lastPoint.z - j), lastDirection, edge.width, edge.height, 1);
@@ -424,13 +466,15 @@ public class DungeonHallway {
                     }
                 }
 
+                // Then we extend from the new direction over the last point until it meets the extension
+                // we just made for the last direction
                 if (direction == 1) {
                     for (int j = 1; j <= edge.width; j++) {
                         wallSkeleton = DrawHallwayWallSegment(wallSkeleton, new Point(lastPoint.x - j, lastPoint.y, lastPoint.z), lastDirection, edge.width, edge.height, 1);
                         spaceSkeleton = DrawHallwaySpaceSegment(wallSkeleton, new Point(lastPoint.x - j, lastPoint.y, lastPoint.z), lastDirection, edge.width, edge.height, 1);
                     }
                 } else if (direction == 2) {
-                    // Nothing happes here
+                    // Nothing happes here, we're going up, so it means the walls are already drawn
                 } else if (direction == 3) {
                     for (int j = 1; j <= edge.width; j++) {
                         wallSkeleton = DrawHallwayWallSegment(wallSkeleton, new Point(lastPoint.x, lastPoint.y, lastPoint.z - j), lastDirection, edge.width, edge.height, 1);
@@ -458,10 +502,14 @@ public class DungeonHallway {
         return (wallSkeleton, spaceSkeleton);
     }
 
+    // For a superMap that has edges with hallways, it draws the hallway skeletons, and then puts all of them 
+    // into the supermap. First placing the walls if the space isn't already used for room architecture, 
+    // Then carving out all the free space, regardless of whether it is in use or not
     public static SuperMap PlaceHallways(SuperMap superMap) {
         int[,,] hallwayWallSkeleton = new int[superMap.xSize, superMap.ySize, superMap.zSize];
         int[,,] HallwaySpaceSkeleton = new int[superMap.xSize, superMap.ySize, superMap.zSize];
 
+        // for each edge, draw into the general wall and space skeleton
         foreach (Node node in superMap.nodes) {
             foreach (Edge edge in node.edges) {
                 if (edge.source.node == node) {
@@ -470,6 +518,7 @@ public class DungeonHallway {
             }
         }
 
+        // Draw in the hallways if the space isnt already occupied
         for (int i = 0; i < superMap.xSize; i++) {
             for (int j = 0; j < superMap.ySize; j++) {
                 for (int k = 0; k < superMap.zSize; k++) {
@@ -480,6 +529,7 @@ public class DungeonHallway {
             }
         }
 
+        // Carve out the hallway space
         for (int i = 0; i < superMap.xSize; i++) {
             for (int j = 0; j < superMap.ySize; j++) {
                 for (int k = 0; k < superMap.zSize; k++) {

@@ -6,6 +6,7 @@ using UnityEngine;
 
 public class DungeonHallway {
 
+    // Set of methods to check whether space is empty in a specific direction off a point
     public delegate bool CheckDirectionMethod (SuperMap superMap, Edge edge, Point current);
     static bool CheckDirection1(SuperMap superMap, Edge edge, Point current) {
         Point point00 = new Point(current.x + 1, current.z - edge.width, current.y);
@@ -52,6 +53,7 @@ public class DungeonHallway {
         CheckDirection6 
     };
 
+    // Try for a path to move forward
     static (SuperMap, Edge, bool, int, int, int) AttemptForward(SuperMap superMap, Edge edge, int xLeft, int yLeft, int zLeft, Point endPoint) {
         bool wentForward = true;
         Point current = edge.path.Last();
@@ -87,6 +89,7 @@ public class DungeonHallway {
         return (superMap, edge, wentForward, xLeft, yLeft, zLeft);
     }
 
+    // Try for a point to turn
     static (SuperMap, Edge, bool, int, int, int, Dictionary<Point, List<int>>) AttemptTurn(SuperMap superMap, Edge edge, int xLeft, int yLeft, int zLeft, Dictionary<Point, List<int>> failedTurns) {
         Point current = edge.path.Last();
         int direction = edge.directions.Last();
@@ -154,6 +157,7 @@ public class DungeonHallway {
         return (superMap, edge, foundTurn, xLeft, yLeft, zLeft, failedTurns);
     }
 
+    // Go back along the path
     static (Edge, int, int, int, Dictionary<Point, List<int>>) BackTrack(Edge edge, int xLeft, int yLeft, int zLeft, Dictionary<Point, List<int>> failedTurns) {
         edge.path.RemoveAt(edge.path.Count() - 1);
         edge.directions.RemoveAt(edge.directions.Count() - 1);
@@ -161,6 +165,7 @@ public class DungeonHallway {
         return (edge, xLeft, yLeft, zLeft, failedTurns);
     }
 
+    // Return if the current direction is bringing the path closer to the end
     static bool GoodDirection(int direction, int xLeft, int yLeft, int zLeft) {
         bool result = (direction != 1 || xLeft > 0);
         result &= (direction != 2 || yLeft > 0);
@@ -171,19 +176,27 @@ public class DungeonHallway {
         return result;
     }
 
+    // Create a path through the supermap between two portals
     static SuperMap CreateEdgePath(SuperMap superMap, Edge edge) {
         Point startPoint = edge.source.point;
         Point endPoint = edge.sink.point;
         int startDirect = edge.source.direction;
+
+        // If the source edge is already setup
+        // if setup, then instead of the startpoint being the source portal start
+        // we find the edge that actually hits the start portal, and then make the
+        // point with the minimum distance between that edge on the sink portal the start point
         if (edge.source.setup) {
+            // Find the edge connected to the portal
             Edge connectorEdge = new Edge();
             foreach (Edge sourceEdge in edge.source.edges) {
-                if (sourceEdge.connector) {
+                if (sourceEdge.path[0] == edge.source.point || sourceEdge.path.Last() == edge.source.point) {
                     connectorEdge = sourceEdge;
                     break;
                 }
             }
 
+            // Find the point with the minimum distance
             double minDistance = int.MaxValue;
             foreach (Point point in connectorEdge.path) {
                 double currentDistance = Utils.Distance(point, endPoint);
@@ -194,15 +207,18 @@ public class DungeonHallway {
             }
         } 
 
+        // Similar thing with the sink portal
         if (edge.sink.setup) {
+            // Find the edge connected to the portal
             Edge connectorEdge = new Edge();
             foreach (Edge sinkEdge in edge.sink.edges) {
-                if (sinkEdge.connector) {
+                if (sinkEdge.path[0] == edge.sink.point || sinkEdge.path.Last() == edge.source.point) {
                     connectorEdge = sinkEdge;
                     break;
                 }
             }
 
+            // Find the point with the minimum distance
             double minDistance = int.MaxValue;
             foreach (Point point in connectorEdge.path) {
                 double currentDistance = Utils.Distance(point, startPoint);
@@ -213,11 +229,15 @@ public class DungeonHallway {
             }
         }
 
+        // While running to imply we were able to find a good path
+        // if we can't find a good path we try the pathfinding algo
+        // again but with a thinner tunnel
         bool running = true;
         while (running) {
             edge.path.Add(startPoint);
             edge.directions.Add(edge.source.direction);
 
+            // Set the distance left until we reach our goal
             int xLeft = endPoint.x - startPoint.x;
             int yLeft = endPoint.y - startPoint.y;
             int zLeft = endPoint.z - startPoint.z;
@@ -227,25 +247,46 @@ public class DungeonHallway {
             bool notBacktracking = true;
             Dictionary<Point, List<int>> failedTurns = new Dictionary<Point, List<int>>();
 
+            // As long as there is still distance to go, and we haven't erased the whole path
+            // Continue
+            // The whole path only gets erased if there is no possible path and we end up backtracking
+            // over the start point
+            // If we turn in a direction, but we end up needing to backtrack back over the turn, it's recorded
+            // As a failed turn, so we never attempt to turn in that direction again, this keeps us from endless
+            // Attempting to draw paths and creates scenarios where we can't find an available path and backtrack to the start
             while ((xLeft != 0 || yLeft != 0 || zLeft != 0) && edge.path.Count() > 0) {
                 if (!notBacktracking) {
+                    // If we are backtracking, then backtrack once and attempt a turn
+                    // If the attempt a turn fails we will continue backtracking, otherwise we will investigate
+                    // the turn
                     (edge, xLeft, yLeft, zLeft, failedTurns) = BackTrack(edge, xLeft, yLeft, zLeft, failedTurns);
                     (superMap, edge, notBacktracking, xLeft, yLeft, zLeft, failedTurns) = AttemptTurn(superMap, edge, xLeft, yLeft, zLeft, failedTurns);
                 } else if ((GoodDirection(edge.directions.Last(), xLeft, yLeft, zLeft) && tryForward) || (tryForward && !tryTurn)) {
+                    // If we have a good direction, and can go forward, or if we don't have a good direction, but can't turn
+                    // try to go forward
                     (superMap, edge, tryForward, xLeft, yLeft, zLeft) = AttemptForward(superMap, edge, xLeft, yLeft, zLeft, endPoint);
                     if (tryForward) {
+                        // if going forward succeeds, reset whether we can try turning to true
+                        // We are in a new location
                         tryTurn = true;
                     }
                 } else if (tryTurn) {
+                    // Otherwise try to turn
                     (superMap, edge, tryTurn, xLeft, yLeft, zLeft, failedTurns) = AttemptTurn(superMap, edge, xLeft, yLeft, zLeft, failedTurns);
                     if (tryTurn) {
+                        // if turning succeeds then reset trying forward to true
                         tryForward = true;
                     }
                 } else {
+                    // if we can't go forward or turn, start backtracking
                     notBacktracking = false;
                 }
             }
 
+            // pathfinding algo is complete, check if it drew a path
+            // If it didn't and we are at min height/width give up
+            // else shrink the tunnel width
+            // if it did then set running to false and complete
             if (edge.path.Count() == 0) {
                 if (edge.height == 0 && edge.width == 0) {
                     edge.connectable = false; // We should try to do something cooler than this
@@ -262,6 +303,7 @@ public class DungeonHallway {
         return superMap;
     }
 
+    // Create an edge path for each edge in the superMap
     public static SuperMap CreateEdgePaths(SuperMap superMap) {
         foreach (Node node in superMap.nodes) {
             foreach (Edge edge in node.edges) {

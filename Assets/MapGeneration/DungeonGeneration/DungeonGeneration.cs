@@ -10,28 +10,37 @@ public class DungeonGeneration {
     static SuperMap GenerateDungeonRooms(SuperMap superMap, System.Random random) {
 
         // Pick and place first room for required rooms
-        int firstRequiredRoomInded = random.Next(0, superMap.requiredRooms.Count);
-        Tuple<int, Point> firstRequiredRoom = superMap.requiredRooms[firstRequiredRoomInded];
-        RoomPrefab firstRoomPrefab = DungeonRoom.GetRoomPrefab(firstRequiredRoom.Item1);
-        superMap.requiredRooms.RemoveAt(firstRequiredRoomInded);
-        RoomSkeleton firstRoomSkeleton = DungeonRoom.GenerateRoomSkeleton(random, firstRoomPrefab, new Tuple<Point, Point>(new Point(0,0,0), new Point(superMap.xSize, superMap.ySize, superMap.zSize)));
-        superMap = DungeonRoom.PlaceRoom(superMap, firstRoomSkeleton, new Point(0, 0, 0), firstRoomPrefab);
+        int firstRoomType;
+        if (superMap.firstRoom != -1) {
+            firstRoomType = superMap.firstRoom;
+        } else {
+            int firstRequiredRoomInded = random.Next(0, superMap.requiredRooms.Count);
+            superMap.requiredRooms.RemoveAt(firstRequiredRoomInded);
+            firstRoomType = superMap.requiredRooms[firstRequiredRoomInded].type;
+        }
+        RoomPrefab firstRoomPrefab = DungeonRoom.GetRoomPrefab(firstRoomType);
+        RoomSkeleton firstRoomSkeleton = DungeonRoomSkeleton.GenerateRoomSkeleton(random, firstRoomPrefab, (new Point(0,0,0), new Point(superMap.xSize, superMap.ySize, superMap.zSize)));
+        superMap = DungeonRoom.PlaceRoom(superMap, firstRoomSkeleton, new Point(superMap.xSize / 2, superMap.ySize / 2, superMap.zSize / 2), firstRoomPrefab);
 
         // Repeatedly add new rooms until all required rooms are placed and total rooms exceeds target room count
         while(superMap.requiredRooms.Count > 0 && superMap.roomCount >= superMap.targetRoomCount) {
             Point nextRoomLocation = DungeonRoom.PickNextLocation(superMap, random);
-            Tuple<Point, Point> nextRoomBounds = DungeonRoom.MeasureFreeSpace(superMap, nextRoomLocation);
-
+            (Point, Point) nextRoomBounds = DungeonRoom.MeasureFreeSpace(superMap, nextRoomLocation);
+            
+            // Pick the next room, if it isn't a legitimate pick, keep going, the face will have been evicted so we're ok
             int nextRoomType = DungeonRoom.PickNextRoom(superMap, random, nextRoomBounds, nextRoomLocation);
-            RoomPrefab nextRoomPrefab = DungeonRoom.GetRoomPrefab(nextRoomType);
-            RoomSkeleton nextRoomSkeleton = DungeonRoom.GenerateRoomSkeleton(random, nextRoomPrefab, nextRoomBounds);
-            Point nextRoomAnchorPoint = DungeonRoom.PickAnchorPoint(superMap, random, nextRoomLocation, nextRoomBounds, nextRoomSkeleton); 
-            superMap = DungeonRoom.PlaceRoom(superMap, nextRoomSkeleton, nextRoomAnchorPoint, nextRoomPrefab);
+            if (nextRoomType != -1) {
+                RoomPrefab nextRoomPrefab = DungeonRoom.GetRoomPrefab(nextRoomType);
+                RoomSkeleton nextRoomSkeleton = DungeonRoomSkeleton.GenerateRoomSkeleton(random, nextRoomPrefab, nextRoomBounds);
+                Point nextRoomAnchorPoint = DungeonRoom.PickAnchorPoint(superMap, random, nextRoomLocation, nextRoomBounds, nextRoomSkeleton); 
+                superMap = DungeonRoom.PlaceRoom(superMap, nextRoomSkeleton, nextRoomAnchorPoint, nextRoomPrefab);
+            }
         }
 
         return superMap;
     }
 
+    // Generate the dungeon graph of zones, connections between zones, and connection between rooms
     static SuperMap GenerateDungeonGraph(SuperMap superMap, System.Random random) {
         superMap.naiveGraph = new int[superMap.nodes.Count(), superMap.nodes.Count()];
         superMap.roomGraph = new int[superMap.nodes.Count(), superMap.nodes.Count()];

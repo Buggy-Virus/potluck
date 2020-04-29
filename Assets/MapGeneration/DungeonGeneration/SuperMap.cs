@@ -11,7 +11,7 @@ public class SuperMap {
 
     public int[,,] skeleton;
 
-    public float targetRoomCount;
+    public int targetRoomCount;
 
     public int targetZoneSize;
     public int zoneRange;
@@ -19,19 +19,22 @@ public class SuperMap {
     public int targetZoneEdges;
     public int zoneEdgesRange;
 
-    public float roomCount;
     public float horizontalSparsity;
     public float verticalSparsity;
     public float sparsityFactor;
     public float horizontalAlignMent;
     public float verticalAlignMent;
 
-    public List<Tuple<int, Point>> requiredRooms;
-    public List<Tuple<double, int>> roomWeights; 
+    public float portalDistanceFactor;
 
-    public List<Tuple<double, int>> zoneEdgeWeights;
+    public int firstRoom;
+    public List<RequiredRoom> requiredRooms;
+    public Dictionary<int, double> roomWeights; 
+
+    public Dictionary<int, double> zoneEdgeWeights;
 
     public Dictionary<int, int> roomMaxes;
+    public float roomCount;
     public Dictionary<int, int> roomCounts;
     
     public List<Zone> zones;

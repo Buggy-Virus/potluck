@@ -22,4 +22,8 @@ public struct Point {
     public static bool operator !=(Point a, Point b) {
         return a.x != b.x || a.y != b.y || a.z != b.z;
     }   
+
+    public static Point operator +(Point a, Point b) {
+        return new Point(a.x + b.x, a.y + b.y, a.z + b.z);
+    }
 }

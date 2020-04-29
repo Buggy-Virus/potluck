@@ -28,8 +28,17 @@ public class Room {
 
         this.anchorPoint = anchorPoint;
         this.midPoint = new Point(anchorPoint.x + roomSkeleton.xLength / 2, anchorPoint.y + roomSkeleton.yLength / 2, anchorPoint.z + roomSkeleton.zLength / 2); 
-        this.faces = roomSkeleton.faces;
+        this.faces = new List<Face>();
+        foreach (Face face in roomSkeleton.faces) {
+            this.faces.Add(new Face(face, anchorPoint));
+        }
         this.portals = roomSkeleton.portals;
+        foreach (Portal portal in this.portals) {
+            portal.point = portal.point + anchorPoint;
+        }
         this.nodes = roomSkeleton.nodes;
+        foreach (Node node in this.nodes) {
+            node.midPoint = node.midPoint + anchorPoint;
+        }
     }
 }

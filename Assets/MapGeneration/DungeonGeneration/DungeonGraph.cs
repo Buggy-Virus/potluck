@@ -72,6 +72,17 @@ public class DungeonGraph {
         return distanceFromOrigin;
     }
 
+    public static SuperMap InitializeNodeIds(SuperMap superMap) {
+        int id = -1;
+        foreach (Node node in superMap.nodes) {
+            id ++;
+            node.id = id;
+        }
+        
+        Debug.Log("Final node id = " + id.ToString());
+        return superMap;
+    }
+
     // Initialize the room graph, putting 1 if two nodes are in the same room
     public static SuperMap InitializeRoomGraph(SuperMap superMap) { // IDK about this, I have to go over graph again
         foreach (Room room in superMap.rooms) {
@@ -135,6 +146,8 @@ public class DungeonGraph {
     // Create a zone based on the superMaps target zone size, and connecting nearby nodes from a starting node
     // excludes a set of nodes if listed
     static SuperMap DefineZone(SuperMap superMap, System.Random random, int start, int zoneNum, int type, List<int> exclude) {
+        Debug.Log("DefineZone Starting");
+
         // Pick the target total nodes in the zone based on the supermap parameter
         int totalNodes = superMap.targetZoneSize + random.Next(0, superMap.zoneRange) - superMap.zoneRange / 2;
         // Create the zone object
@@ -154,6 +167,7 @@ public class DungeonGraph {
         // While the number of nodes is less than the target total nodes
         // and there are still zone portals to connect
         while (zone.nodes.Count() >= totalNodes && zonePortals.Count() > 0) {
+            Debug.Log("Define Zone While Loop, totalNodes = " + zone.nodes.Count().ToString() + ", zonePortals = " + zonePortals.Count().ToString());
             // Pick the next portal to connect
             Portal startPortal = PickStartPortal(random, zonePortals);
             // Pick an eligible portal to connect it to, and thus the next node to add
@@ -161,8 +175,10 @@ public class DungeonGraph {
             // If it connected with itself we couldn't find a good end portal, so that
             // portal is dead and we evict it as a potential start portal
             if (endPortal == startPortal) { // Couldn't find an end portal
+                Debug.Log("Couldn't get matching portal, evicting");
                 zonePortals.Remove(startPortal);
             } else {
+                Debug.Log("Got sink portal");
                 // If we got a good end portal we add a new edge between the two nodes
                 Edge edge = new Edge(startPortal, endPortal);
                 superMap.naiveGraph[startPortal.node.id, endPortal.node.id] += 1;
@@ -170,6 +186,7 @@ public class DungeonGraph {
 
                 // If the endportal node was not already in the zone we add it
                 if (endPortal.node.zone != zoneNum) {
+                    Debug.Log("Adding node to zone");
                     endPortal.node.zone = zoneNum;
                     zone.nodes.Add(endPortal.node);
                     zonePortals = zonePortals.Concat(endPortal.node.portals).ToList();
@@ -228,12 +245,15 @@ public class DungeonGraph {
             }
         }
 
+        Debug.Log("Final zone num = " + zoneNum.ToString());
         return superMap;
     }
 
     // From a superMap which has had its zones defined, then connect the zones in a way such that
     // There won' be sequence breaks and all zones will be accessible
     public static SuperMap CreateZoneGraph(SuperMap superMap, System.Random random) {
+        Debug.Log("Starting CreateZoneGraph");
+
         // Create an adjacency matrix for the zones, also track all the edges between zones
         superMap.zoneGraph = new int[superMap.zones.Count(), superMap.zones.Count()];
         superMap.zoneEdgeGraph = new List<Edge>[superMap.zones.Count(), superMap.zones.Count()];
@@ -244,6 +264,7 @@ public class DungeonGraph {
 
         // While the zone graph is not connected introduce more connections to the zone graph
         while (!connected) {
+            Debug.Log("Not connected, running through all zones to attempt connections");
             // Consider a connection between every two zones
             foreach (Zone sourceZone in superMap.zones) {
                 foreach (Zone sinkZone in superMap.zones) {
@@ -323,6 +344,7 @@ public class DungeonGraph {
 
     // Paint zone edges between two zones with conditionals such that there is still a possible naive path through the dungeon
     static SuperMap PaintZoneEdges(SuperMap superMap, System.Random random, int currentZone, List<Edge> edges, List<int> AccessibleZones, bool first) {
+        Debug.Log("Starting PaintZoneEdges");
         // we can tune how we choose the conditionals
         // 1 naive
         // 2 keyed
@@ -367,6 +389,7 @@ public class DungeonGraph {
 
         // Do it for the rest of the edges, now allowing edges that aren't necessarily accessible
         while (edges.Count() > 0) {
+            Debug.Log("Edges still to be painted, total unpainted edges = " + edges.Count().ToString());
             // Pick a random edge And remove it from the edges to paint
             Edge edge = edges[random.Next(0, edges.Count())];
             edges.Remove(edge);
@@ -401,6 +424,7 @@ public class DungeonGraph {
 
     // For all the zones add conditionals on the connecting edges, such that they can all be accessed
     public static SuperMap AddEdgeConditions(SuperMap superMap, System.Random random) {
+        Debug.Log("Starting Add Edge Conditions");
         bool[] visited = new bool[superMap.zones.Count()];
         // Initialize accessible zones with the original zone accessible
         List<int> accessibleZones = new List<int>{0};
@@ -417,6 +441,7 @@ public class DungeonGraph {
         
         // While the queue is not empty, add paint the edges to all adjacent zones which have been setup
         while (queued.Count() > 0) {
+            Debug.Log("Edge Condition queue = " + queued.Count().ToString() + ", accessibleZones = " + accessibleZones.Count().ToString());
             // Pick one at random from the queued
             int current = queued[random.Next(0, queued.Count())];
             queued.Remove(current);

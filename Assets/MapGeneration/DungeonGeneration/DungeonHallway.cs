@@ -93,6 +93,7 @@ public class DungeonHallway {
 
     // Try for a point to turn
     static (SuperMap, Edge, bool, int, int, int, Dictionary<Point, List<int>>) AttemptTurn(SuperMap superMap, Edge edge, int xLeft, int yLeft, int zLeft, Dictionary<Point, List<int>> failedTurns) {
+        Debug.Log("Attempting a Turn");
         Point current = edge.path.Last();
         int direction = edge.directions.Last();
         // Check if we've tried to turn at this point before and there are failed turns
@@ -121,6 +122,7 @@ public class DungeonHallway {
         // false and be returned
         bool foundTurn = false;
         while (availableDirections > 0 && !foundTurn) {
+            Debug.Log("Haven't found a turn, available directions = " + availableDirections.ToString());
             // Find the direction with the best score
             int max = int.MinValue;
             int maxIndex = -1;
@@ -133,6 +135,7 @@ public class DungeonHallway {
             
             // check if we can turn in the direction of the best available direction
             if (CheckDirections[maxIndex](superMap, edge, current)) {
+                Debug.Log("Found a turn");
                 // If so, we found a turn and update the direction, and move the path
                 // one unit in the new direction
                 foundTurn = true;
@@ -207,6 +210,7 @@ public class DungeonHallway {
 
     // Create a path through the supermap between two portals
     static SuperMap CreateEdgePath(SuperMap superMap, Edge edge) {
+        Debug.Log("Starting CreateEdgePath");
         Point startPoint = edge.source.point;
         Point endPoint = edge.sink.point;
         int startDirect = edge.source.direction;
@@ -263,6 +267,7 @@ public class DungeonHallway {
         // again but with a thinner tunnel
         bool running = true;
         while (running) {
+            Debug.Log("Edge Path Running");
             edge.path.Add(startPoint);
             edge.directions.Add(edge.source.direction);
 
@@ -284,13 +289,16 @@ public class DungeonHallway {
             // As a failed turn, so we never attempt to turn in that direction again, this keeps us from endless
             // Attempting to draw paths and creates scenarios where we can't find an available path and backtrack to the start
             while ((xLeft != 0 || yLeft != 0 || zLeft != 0) && edge.path.Count() > 0) {
+                Debug.Log("Attempting next move, xLeft = " + xLeft + ", yLeft = " + yLeft + ", zLeft = " + zLeft + ", path count = " + edge.path.Count());
                 if (!notBacktracking) {
+                    Debug.Log("Backtracking");
                     // If we are backtracking, then backtrack once and attempt a turn
                     // If the attempt a turn fails we will continue backtracking, otherwise we will investigate
                     // the turn
                     (edge, xLeft, yLeft, zLeft, failedTurns) = BackTrack(edge, xLeft, yLeft, zLeft, failedTurns);
                     (superMap, edge, notBacktracking, xLeft, yLeft, zLeft, failedTurns) = AttemptTurn(superMap, edge, xLeft, yLeft, zLeft, failedTurns);
                 } else if ((GoodDirection(edge.directions.Last(), xLeft, yLeft, zLeft) && tryForward) || (tryForward && !tryTurn)) {
+                    Debug.Log("Attempting Forward");
                     // If we have a good direction, and can go forward, or if we don't have a good direction, but can't turn
                     // try to go forward
                     (superMap, edge, tryForward, xLeft, yLeft, zLeft) = AttemptForward(superMap, edge, xLeft, yLeft, zLeft, endPoint);
@@ -300,6 +308,7 @@ public class DungeonHallway {
                         tryTurn = true;
                     }
                 } else if (tryTurn) {
+                    Debug.Log("Attempting Turn");
                     // Otherwise try to turn
                     (superMap, edge, tryTurn, xLeft, yLeft, zLeft, failedTurns) = AttemptTurn(superMap, edge, xLeft, yLeft, zLeft, failedTurns);
                     if (tryTurn) {
@@ -307,6 +316,7 @@ public class DungeonHallway {
                         tryForward = true;
                     }
                 } else {
+                    Debug.Log("Can't turn or forward, starting backtracking");
                     // if we can't go forward or turn, start backtracking
                     notBacktracking = false;
                 }
@@ -318,13 +328,16 @@ public class DungeonHallway {
             // if it did then set running to false and complete
             if (edge.path.Count() == 0) {
                 if (edge.height == 0 && edge.width == 0) {
+                    Debug.Log("Failed to create path");
                     edge.connectable = false; // We should try to do something cooler than this
                     running = false;
                 } else {
+                    Debug.Log("Path too thick, thinning path and trying again");
                     edge.height = Math.Max(0, edge.height - 1);
                     edge.width = Math.Max(0, edge.width - 1);
                 }
             } else {
+                Debug.Log("Successfully generated path");
                 running = false;
             }
         }
@@ -334,10 +347,16 @@ public class DungeonHallway {
 
     // Create an edge path for each edge in the superMap
     public static SuperMap CreateEdgePaths(SuperMap superMap) {
+        Debug.Log("Starting Create Edge Paths");
+
+        int pathsCreated = 0;
         foreach (Node node in superMap.nodes) {
             foreach (Edge edge in node.edges) {
                 if (edge.source.node == node) {
+                    pathsCreated ++;
+                    Debug.Log("Creating Path " + pathsCreated);
                     superMap = CreateEdgePath(superMap, edge);
+                    Debug.Log("Finished Path " + pathsCreated);
                 }
             }
         }
@@ -422,6 +441,8 @@ public class DungeonHallway {
 
     // For a given edge path, draw a skeleton of the hallway for both the walls and space
     static (int[,,], int[,,]) DrawHallwaySkeleton(int[,,] wallSkeleton, int[,,] spaceSkeleton, Edge edge) {
+        Debug.Log("Starting DrawHallwaySkeleton");
+
         int lastDirection = edge.directions[0];
 
         // For every point along the path draw a wall and space segment
@@ -506,6 +527,8 @@ public class DungeonHallway {
     // into the supermap. First placing the walls if the space isn't already used for room architecture, 
     // Then carving out all the free space, regardless of whether it is in use or not
     public static SuperMap PlaceHallways(SuperMap superMap) {
+        Debug.Log("Starting PlaceHallways");
+        
         int[,,] hallwayWallSkeleton = new int[superMap.xSize, superMap.ySize, superMap.zSize];
         int[,,] HallwaySpaceSkeleton = new int[superMap.xSize, superMap.ySize, superMap.zSize];
 

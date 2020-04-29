@@ -34,10 +34,12 @@ public class MapScript : MonoBehaviour
     public int VERTICAL_ALIGNMENT = 0;
 
     public int FIRST_ROOM = 1;
-    public Dictionary<int, int> ROOM_MAXES = new Dictionary<int, int>() {{0, 99}};
+    public Dictionary<int, int> ROOM_MAXES = new Dictionary<int, int>() {
+        {0, 99}
+    };
     public List<int> REQUIRED_ROOMS = new List<int>() {2, 2};
     public Dictionary<int, double> ROOM_WEIGHTS = new Dictionary<int, double>() {
-        {1, 100.0}
+        {3, 100.0}
     };
 
     public double PORTAL_DISTANCE_FACTOR = 0.7;

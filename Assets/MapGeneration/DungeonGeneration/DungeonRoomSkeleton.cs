@@ -16,7 +16,7 @@ public class DungeonRoomSkeleton {
         int zSize = random.Next(zMin, zMax);
         roomSkeleton.skeleton = new int[xSize,ySize,zSize];
 
-        roomSkeleton.xLength = xSize - random.Next();
+        roomSkeleton.xLength = xSize;
         roomSkeleton.yLength = ySize;
         roomSkeleton.zLength = zSize;
         int xEnd = xSize - 1;
@@ -47,10 +47,9 @@ public class DungeonRoomSkeleton {
 
         Node node = new Node();
         node.midPoint = roomSkeleton.midPoint;
-        node.type = 0;
         node.portals = new List<Portal>();
         node.edges = new List<Edge>();
-        roomSkeleton.nodes = new List<Node>() {new Node()};
+        roomSkeleton.nodes = new List<Node>() {node};
 
         Portal xPortalClose = new Portal();
         xPortalClose.point = new Point(0, 1, zSize / 2);
@@ -150,6 +149,20 @@ public class DungeonRoomSkeleton {
 
         roomSkeleton.faces = new List<Face>() {xFaceClose, xFaceFar, yFaceClose, yFaceFar, zFaceClose, zFaceFar};
         roomSkeleton.openFaces = roomSkeleton.faces;
+
+        return roomSkeleton;
+    }
+
+    public static RoomSkeleton SimpleOriginSkeleton(System.Random random, int xMax, int yMax, int zMax, int xMin, int yMin, int zMin) {
+        RoomSkeleton roomSkeleton = SimpleRoomSkeleton(random, xMax, yMax, zMax, xMin, yMin, zMin);
+        roomSkeleton.nodes[0].origin = true;
+
+        return roomSkeleton;
+    }
+
+    public static RoomSkeleton SimpleGoalSkeleton(System.Random random, int xMax, int yMax, int zMax, int xMin, int yMin, int zMin) {
+        RoomSkeleton roomSkeleton = SimpleRoomSkeleton(random, xMax, yMax, zMax, xMin, yMin, zMin);
+        roomSkeleton.nodes[0].goal = true;
 
         return roomSkeleton;
     }

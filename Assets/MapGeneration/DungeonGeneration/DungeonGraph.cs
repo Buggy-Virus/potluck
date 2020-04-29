@@ -202,7 +202,7 @@ public class DungeonGraph {
         // set the origin index equal to the node with type matching the start node
         int origin = 0;
         foreach (Node node in superMap.nodes) {
-            if (node.type == 0) {
+            if (node.origin) {
                 origin = node.id;
                 break;
             }

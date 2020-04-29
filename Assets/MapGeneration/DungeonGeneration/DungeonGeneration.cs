@@ -49,7 +49,7 @@ public class DungeonGeneration {
         superMap = DungeonGraph.InitializeRoomGraph(superMap);
         List<int> goalNodes = new List<int>();
         foreach (Node node in superMap.nodes) {
-            if (node.type == 1) {
+            if (node.goal) {
                 goalNodes.Add(node.id);
             }
         }

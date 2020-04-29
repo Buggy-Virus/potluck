@@ -431,7 +431,7 @@ public class DungeonRoom {
         }
 
         // Create the new room and add it to the superMap
-        Room room = new Room(roomPrefab.type, anchorPoint, roomSkeleton);
+        Room room = new Room(roomPrefab, anchorPoint, roomSkeleton);
         superMap.rooms.Add(room);
 
         // Increment the roomcount

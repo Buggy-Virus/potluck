@@ -5,12 +5,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Node {
-    // 0 is start
-    // 1 is objective
     public int id;
     public int zone;
     public Point midPoint;
     public List<Portal> portals;
     public List<Edge> edges;
-    public int type;    
+    public int type;
+    public bool goal;
+    public bool origin;
 }

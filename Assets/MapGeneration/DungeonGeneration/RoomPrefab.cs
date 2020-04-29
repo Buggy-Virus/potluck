@@ -20,11 +20,15 @@ public struct RoomPrefab {
     public double weight;
 
     public int type;
+    public bool origin;
+    public bool goal;
     public List<int> requiredRooms;
     public RoomSkeletonMethod roomSkeletonMethod;
 
-    public RoomPrefab(int type, int xMax, int yMax, int zMax, int xMin, int yMin, int zMin, bool hasPreference, double preference, bool hasDispreference, double dispreference, double weight, List<int> requiredRooms, RoomSkeletonMethod roomSkeletonMethod) {
+    public RoomPrefab(int type, bool origin, bool goal, int xMax, int yMax, int zMax, int xMin, int yMin, int zMin, bool hasPreference, double preference, bool hasDispreference, double dispreference, double weight, List<int> requiredRooms, RoomSkeletonMethod roomSkeletonMethod) {
         this.type = type;
+        this.origin = origin;
+        this.goal = goal;
         
         this.xMax = xMax;
         this.yMax = yMax;

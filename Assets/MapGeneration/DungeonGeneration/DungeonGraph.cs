@@ -17,18 +17,48 @@ public class DungeonGraph {
             // mark it visited and remove it from the queue
             int current = queued[0];
             queued.RemoveAt(0);
-            visited.Add(current);
             // Look at all the connections to the node, if it isn't visited
             // Add it to the queue
             for (int i = 0; i < graph.GetLength(0); i++) {
                 if (graph[current, i] > 0 && !visited.Contains(i)) {
                     queued.Add(i);
+                    visited.Add(i);
                 }
             }
         }
 
         // If we end up visiting all the nodes it's connected
         return visited.Count() == graph.GetLength(0);
+    }
+
+    // Returns a list of unconnected nodes in a graph
+    static List<int> GetDisconnected(int[,] graph) {
+        List<int> visited = new List<int>(){0};
+        List<int> queued = new List<int>(){0};
+
+        // If there are still nodes we've seen but haven't visited
+        // Visit them
+        while (queued.Count() > 0) {
+            // mark it visited and remove it from the queue
+            int current = queued[0];
+            queued.RemoveAt(0);
+            // Look at all the connections to the node, if it isn't visited
+            // Add it to the queue
+            for (int i = 0; i < graph.GetLength(0); i++) {
+                if (graph[current, i] > 0 && !visited.Contains(i)) {
+                    queued.Add(i);
+                    visited.Add(i);
+                }
+            }
+        }
+
+        List<int> disconnected = new List<int>();
+        for (int i = 0; i < graph.GetLength(0); i++) {
+            if (!visited.Contains(i)) {
+                disconnected.Add(i);
+            }
+        }
+        return disconnected;
     }
 
     static int[] Djikstra(int[,] graph, int origin) {
@@ -84,9 +114,12 @@ public class DungeonGraph {
     }
 
     // Initialize the room graph, putting 1 if two nodes are in the same room
-    public static SuperMap InitializeRoomGraph(SuperMap superMap) { // IDK about this, I have to go over graph again
+    public static SuperMap InitializeGraphs(SuperMap superMap) { // IDK about this, I have to go over graph again
         foreach (Room room in superMap.rooms) {
             foreach (Node a in room.nodes) {
+                superMap.naiveGraph[a.id, a.id] = 1;
+                superMap.roomGraph[a.id, a.id] = 1;
+                superMap.specialGraph[a.id, a.id] = 1;
                 foreach (Node b in room.nodes) {
                     superMap.roomGraph[a.id, b.id] = 1;
                 }
@@ -118,7 +151,7 @@ public class DungeonGraph {
         foreach (Portal portal in superMap.portals) { // Could be made more efficient by tracking which portals are already in a different zone
             double distance = Utils.Distance(portal.point, startPortal.point); // could put this calculate after the if startment to cut down on computation
             // Check if it is within a reasonable distance, and the endpoint is not excluded, and the node either has no zone or is in the starts own zone
-            if (distance < superMap.sparsityFactor && !exclude.Contains(portal.node.id) && (portal.node.zone == -1 || portal.node.zone == startPortal.node.zone)) {
+            if (distance < superMap.sparsityFactor && !exclude.Contains(portal.node.id) && (portal.node.zone == -1 || portal.node.zone != startPortal.node.zone)) {
                 cutoffs.Add((portal, total));
                 total += Math.Pow(distance, superMap.portalDistanceFactor);
             }
@@ -166,7 +199,7 @@ public class DungeonGraph {
 
         // While the number of nodes is less than the target total nodes
         // and there are still zone portals to connect
-        while (zone.nodes.Count() >= totalNodes && zonePortals.Count() > 0) {
+        while (zone.nodes.Count() < totalNodes && zonePortals.Count() > 0) {
             Debug.Log("Define Zone While Loop, totalNodes = " + zone.nodes.Count().ToString() + ", zonePortals = " + zonePortals.Count().ToString());
             // Pick the next portal to connect
             Portal startPortal = PickStartPortal(random, zonePortals);
@@ -256,17 +289,29 @@ public class DungeonGraph {
 
         // Create an adjacency matrix for the zones, also track all the edges between zones
         superMap.zoneGraph = new int[superMap.zones.Count(), superMap.zones.Count()];
+        for (int i = 0; i < superMap.zoneGraph.GetLength(0); i++) {
+            superMap.zoneGraph[i, i] = 1;
+        }
         superMap.zoneEdgeGraph = new List<Edge>[superMap.zones.Count(), superMap.zones.Count()];
+        for (int i = 0; i < superMap.zoneEdgeGraph.GetLength(0); i++) {
+            for (int j = 0; j < superMap.zoneEdgeGraph.GetLength(1); j++) {
+                superMap.zoneEdgeGraph[i,j] = new List<Edge>();
+            }
+        }
 
         // Set an initial distance threshold for how close two zones need to be, this cna be changed
-        double distanceThreshold = superMap.sparsityFactor * 2;
-        bool connected = false;
+        List<int> disconnectedZones = new List<int>();
+        for (int i = 0; i < superMap.zones.Count(); i++) {
+            disconnectedZones.Add(i);
+        }
+        double distanceThreshold = superMap.sparsityFactor;
 
         // While the zone graph is not connected introduce more connections to the zone graph
-        while (!connected) {
+        while (disconnectedZones.Count() > 0) {
             Debug.Log("Not connected, running through all zones to attempt connections");
             // Consider a connection between every two zones
-            foreach (Zone sourceZone in superMap.zones) {
+            foreach (int sourceZoneId in disconnectedZones) {
+                Zone sourceZone = superMap.zones[sourceZoneId];
                 foreach (Zone sinkZone in superMap.zones) {
                     // If the source and sink zone are different, aren't connected, and their distance is below the distance threshold we add some edges
                     if (sourceZone.id != sinkZone.id && superMap.zoneGraph[sourceZone.id, sinkZone.id] == 0 && Utils.Distance(sourceZone.midPoint, sinkZone.midPoint) < distanceThreshold) { // Distance threshold check should have some randomness added to it
@@ -291,7 +336,7 @@ public class DungeonGraph {
                         List<Tuple<Portal, double>> sinkCutoffs = new List<Tuple<Portal, double>>();
                         foreach(Node node in sinkZone.nodes) {
                             foreach(Portal portal in node.portals) {
-                                sourceCutoffs.Add(new Tuple<Portal, double>(portal, sinkTotal));
+                                sinkCutoffs.Add(new Tuple<Portal, double>(portal, sinkTotal));
                                 // Weight it by the distane between the portal and the source midpoint
                                 sinkTotal += Math.Pow(1.0 / Utils.Distance(sourceZone.midPoint, portal.point), superMap.portalDistanceFactor);
                             }
@@ -312,8 +357,10 @@ public class DungeonGraph {
 
                             double sinkRoll = random.NextDouble() * sinkTotal;
                             Portal sinkPortal = new Portal();
+                            Debug.Log("sinkCutoffs = " + sinkCutoffs.Count());
                             foreach (Tuple<Portal, double> cutoff in sinkCutoffs) {
                                 if (sinkRoll > cutoff.Item2) {
+                                    Debug.Log("Here");
                                     sinkPortal = cutoff.Item1;
                                 } else {
                                     break;
@@ -322,11 +369,8 @@ public class DungeonGraph {
 
                             // Add an edge between the two portals, and between the zones
                             Edge edge = new Edge(sourcePortal, sinkPortal);
-                            if (sourceZone.id < sinkZone.id) {
-                                superMap.zoneEdgeGraph[sourceZone.id, sinkZone.id].Add(edge);
-                            } else {
-                                superMap.zoneEdgeGraph[sinkZone.id, sourceZone.id].Add(edge);
-                            }
+                            superMap.zoneEdgeGraph[sourceZone.id, sinkZone.id].Add(edge);
+                            superMap.zoneEdgeGraph[sinkZone.id, sourceZone.id].Add(edge);
                         }
                     }
                 }
@@ -335,9 +379,29 @@ public class DungeonGraph {
             // After going through all the possible connections, check if it's connected  and update connected
             // Up the sparsity factor so that we'll look further out for making connections the second time around
             // If everything isn't connected
-            distanceThreshold += superMap.sparsityFactor;
-            connected = IsConnected(superMap.zoneGraph);
-        }        
+            disconnectedZones = GetDisconnected(superMap.zoneGraph);
+            distanceThreshold += superMap.sparsityFactor * 0.5;
+        }     
+
+        Debug.Log("Zone Adjacency Graph");
+        string graphString = "";
+        for (int i = 0; i < superMap.zoneGraph.GetLength(0); i++) {
+            for (int j = 0; j < superMap.zoneGraph.GetLength(1); j++) {
+                graphString += superMap.zoneGraph[i, j] + " ";
+            }
+            graphString += "\n";
+        }   
+        Debug.Log(graphString);
+
+        Debug.Log("Zone Connection Counts");
+        string connectionsString = "";
+        for (int i = 0; i < superMap.zoneGraph.GetLength(0); i++) {
+            for (int j = 0; j < superMap.zoneGraph.GetLength(1); j++) {
+                connectionsString += superMap.zoneEdgeGraph[i, j].Count() + " ";
+            }
+            connectionsString += "\n";
+        }   
+        Debug.Log(connectionsString);
 
         return superMap;
     }
@@ -362,10 +426,12 @@ public class DungeonGraph {
         // }; // This should be something in the superMap
 
         // If it's the first we have it either naive or keyed so that it is accessible
+        List<Edge> unpainted = new List<Edge>(edges);
+
         if (first) {
             // Pick a random edge And remove it from the edges to paint
-            Edge firstEdge = edges[random.Next(0, edges.Count())];
-            edges.Remove(firstEdge);
+            Edge firstEdge = unpainted[random.Next(0, unpainted.Count())];
+            unpainted.Remove(firstEdge);
 
             // Roll for edge type, for first we only consider edges under 0.5
             double firstRoll = random.NextDouble() * 0.5;
@@ -388,11 +454,11 @@ public class DungeonGraph {
         }
 
         // Do it for the rest of the edges, now allowing edges that aren't necessarily accessible
-        while (edges.Count() > 0) {
-            Debug.Log("Edges still to be painted, total unpainted edges = " + edges.Count().ToString());
+        while (unpainted.Count() > 0) {
+            Debug.Log("Edges still to be painted, total unpainted edges = " + unpainted.Count().ToString());
             // Pick a random edge And remove it from the edges to paint
-            Edge edge = edges[random.Next(0, edges.Count())];
-            edges.Remove(edge);
+            Edge edge = unpainted[random.Next(0, unpainted.Count())];
+            unpainted.Remove(edge);
 
             // Roll for edge type
             double firstRoll = random.NextDouble();
@@ -434,7 +500,7 @@ public class DungeonGraph {
         // queue all the zones connected to the origin zone
         List<int> queued = new List<int>();
         for (int i = 0; i < superMap.zoneGraph.GetLength(0); i++) {
-            if (superMap.zoneGraph[0,i] != 0) {
+            if (!visited[i] && superMap.zoneGraph[0,i] != 0) {
                 queued.Add(i);
             }
         }
@@ -445,14 +511,15 @@ public class DungeonGraph {
             // Pick one at random from the queued
             int current = queued[random.Next(0, queued.Count())];
             queued.Remove(current);
+            visited[current] = true;
 
             List<int> adjacentAccessible = new List<int>();
 
             // If not visited and it's connected add it to the queue
             for (int i = 0; i < superMap.zoneGraph.GetLength(0); i++) {
-                if (!visited[i] && superMap.zoneGraph[current, i] != 0) {
+                if (!visited[i] && !queued.Contains(i) && superMap.zoneGraph[current, i] != 0) {
                     queued.Add(i);
-                } else if (superMap.zoneGraph[current, i] != 0) {
+                } else if (superMap.zoneGraph[current, i] != 0 && current != i) {
                     adjacentAccessible.Add(i);
                 }
             }
@@ -461,19 +528,13 @@ public class DungeonGraph {
             bool first = true;
             while (adjacentAccessible.Count() > 0) {
                 int adjacentZone = adjacentAccessible[random.Next(0, adjacentAccessible.Count())];
-                if (current < adjacentZone) {
-                    superMap = PaintZoneEdges(superMap, random, current, superMap.zoneEdgeGraph[current, adjacentZone], accessibleZones, first);
-                } else {
-                    superMap = PaintZoneEdges(superMap, random, current, superMap.zoneEdgeGraph[adjacentZone, current], accessibleZones, first);
-                }
+                superMap = PaintZoneEdges(superMap, random, current, superMap.zoneEdgeGraph[current, adjacentZone], accessibleZones, first);
                 adjacentAccessible.Remove(adjacentZone);
                 first = false;
             }
 
-            // Set as visited, and add it as now an accesible edge
-            visited[current] = true;
+            // add it as now an accesible edge
             accessibleZones.Add(current);
-            
         }
 
         return superMap;

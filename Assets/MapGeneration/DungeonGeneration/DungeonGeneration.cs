@@ -56,7 +56,7 @@ public class DungeonGeneration {
         superMap.specialGraph = new int[superMap.nodes.Count(), superMap.nodes.Count()];
 
         superMap = DungeonGraph.InitializeNodeIds(superMap);
-        superMap = DungeonGraph.InitializeRoomGraph(superMap);
+        superMap = DungeonGraph.InitializeGraphs(superMap);
         List<int> goalNodes = new List<int>();
         foreach (Node node in superMap.nodes) {
             if (node.goal) {
@@ -101,8 +101,8 @@ public class DungeonGeneration {
     static public SuperMap GenerateDungeonSuperMap(SuperMap superMap, System.Random random) {
         Debug.Log("Start Generate Dungeon SuperMap");
         superMap = GenerateDungeonRooms(superMap, random);
-        // superMap = GenerateDungeonGraph(superMap, random);
-        // superMap = GenerateDungeonHallways(superMap, random);
+        superMap = GenerateDungeonGraph(superMap, random);
+        superMap = GenerateDungeonHallways(superMap, random);
         // superMap = GenerateDungeonZones(superMap, random);
         // superMap = PlaceDungeonObjects(superMap, random);
         // superMap = PlaceDungeonMobs(superMap, random);

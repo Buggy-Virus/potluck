@@ -74,7 +74,7 @@ public class MapScript : MonoBehaviour
             row.name = "row_" + y;
             for (int x = 0; x < skeleton.GetLength(0); x++) {
                 for (int z = 0; z < skeleton.GetLength(2); z++) {
-                    if (skeleton[x, y, z] > 0) {
+                    if (skeleton[x, y, z] == 1) {
                         Instantiate(terrainScript.terrainDict[skeleton[x, y, z]], new Vector3(x, y, z), Quaternion.identity, row.transform);
                     }
                 }

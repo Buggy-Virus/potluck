@@ -47,17 +47,16 @@ public class DungeonRoomSkeleton {
 
         Node node = new Node();
         node.midPoint = roomSkeleton.midPoint;
-        node.portals = new List<Portal>();
         node.edges = new List<Edge>();
         roomSkeleton.nodes = new List<Node>() {node};
 
         Portal xPortalClose = new Portal();
         xPortalClose.point = new Point(0, 1, zSize / 2);
-        roomSkeleton.skeleton[0, 1, zSize / 2] = 0;
-        roomSkeleton.skeleton[0, 2, zSize / 2] = 0;
+        roomSkeleton.skeleton[0, 1, zSize / 2] = 1000;
+        roomSkeleton.skeleton[0, 2, zSize / 2] = 1000;
         xPortalClose.type = 0;
-        xPortalClose.width = 1;
-        xPortalClose.height = 2;
+        xPortalClose.width = 0;
+        xPortalClose.height = 0;
         xPortalClose.direction = 4;
         xPortalClose.node = node;
         xPortalClose.edgeCount = 0;
@@ -66,11 +65,11 @@ public class DungeonRoomSkeleton {
 
         Portal zPortalClose = new Portal();
         zPortalClose.point = new Point(xSize / 2, 1, 0);
-        roomSkeleton.skeleton[xEnd / 2, 1, 0] = 0;
-        roomSkeleton.skeleton[xEnd / 2, 2, 0] = 0;
+        roomSkeleton.skeleton[xEnd / 2, 1, 0] = 1000;
+        roomSkeleton.skeleton[xEnd / 2, 2, 0] = 1000;
         zPortalClose.type = 0;
-        zPortalClose.width = 1;
-        zPortalClose.height = 2;
+        zPortalClose.width = 0;
+        zPortalClose.height = 0;
         zPortalClose.direction = 4;
         zPortalClose.node = node;
         xPortalClose.edgeCount = 0;
@@ -79,11 +78,11 @@ public class DungeonRoomSkeleton {
 
         Portal xPortalFar = new Portal();
         xPortalFar.point = new Point(xEnd, 1, zSize / 2);
-        roomSkeleton.skeleton[xEnd, 1, zSize / 2] = 0;
-        roomSkeleton.skeleton[xEnd, 2, zSize / 2] = 0;
+        roomSkeleton.skeleton[xEnd, 1, zSize / 2] = 1000;
+        roomSkeleton.skeleton[xEnd, 2, zSize / 2] = 1000;
         xPortalFar.type = 0;
-        xPortalFar.width = 1;
-        xPortalFar.height = 2;
+        xPortalFar.width = 0;
+        xPortalFar.height = 0;
         xPortalFar.direction = 4;
         xPortalFar.node = node;
         xPortalFar.edgeCount = 0;
@@ -92,11 +91,11 @@ public class DungeonRoomSkeleton {
 
         Portal zPortalFar = new Portal();
         zPortalFar.point = new Point(xSize / 2, 1, zEnd);
-        roomSkeleton.skeleton[xSize / 2, 1, zEnd] = 0;
-        roomSkeleton.skeleton[xSize / 2, 2, zEnd] = 0;
+        roomSkeleton.skeleton[xSize / 2, 1, zEnd] = 1000;
+        roomSkeleton.skeleton[xSize / 2, 2, zEnd] = 1000;
         zPortalFar.type = 0;
-        zPortalFar.width = 1;
-        zPortalFar.height = 2;
+        zPortalFar.width = 0;
+        zPortalFar.height = 0;
         zPortalFar.direction = 4;
         zPortalFar.node = node;
         zPortalFar.edgeCount = 0;
@@ -104,6 +103,7 @@ public class DungeonRoomSkeleton {
         zPortalFar.edges = new List<Edge>();
 
         roomSkeleton.portals = new List<Portal>() {xPortalClose, xPortalFar, zPortalClose, zPortalFar};
+        node.portals = roomSkeleton.portals;
 
         Face xFaceClose = new Face();
         xFaceClose.direction = 4;

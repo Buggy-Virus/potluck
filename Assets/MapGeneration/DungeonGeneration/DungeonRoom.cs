@@ -25,23 +25,14 @@ public class DungeonRoom {
         // If not facing up or down, return the y at the base of the face
         // Otherwise return the midpoint of y
         if (face.direction == 1 || face.direction == 4) {
-            Debug.Log("x direction face");
-            Debug.Log(face.corner00.x);
-            Debug.Log(face.corner11.x);
             nextLocation.x = face.corner00.x;
             nextLocation.y = face.corner00.y;
             nextLocation.z = (face.corner00.z + face.corner11.z) / 2;
         } else if (face.direction == 2 || face.direction == 5) {
-            Debug.Log("y direction face");
-            Debug.Log(face.corner00.y);
-            Debug.Log(face.corner11.y);
             nextLocation.z = face.corner00.z;
             nextLocation.y = face.corner00.y;
             nextLocation.x = (face.corner00.x + face.corner11.x) / 2;
         } else {
-            Debug.Log("z direction face");
-            Debug.Log(face.corner00.z);
-            Debug.Log(face.corner11.z);
             nextLocation.y = face.corner00.y;
             nextLocation.x = (face.corner00.x + face.corner11.x) / 2;
             nextLocation.z = (face.corner00.z + face.corner11.z) / 2;
@@ -65,8 +56,6 @@ public class DungeonRoom {
         // 2 xzy
         // 3 zxy
         // 4 yxz
-
-        Debug.Log(superMap.rooms.Count());
         
         // Check all faces, depending on which direction they are facing, bound a dimension
         // based on the face if it happens to overlap with the range we are checking
@@ -274,10 +263,6 @@ public class DungeonRoom {
         int volume2 = (xMax12 - xMin12) * (yMax2 - yMin2) * (zMax2 - zMin2);
         int volume3 = (xMax3 - xMin3) * (yMax3 - yMin3) * (zMax3 - zMin3);
         int volume4 = (xMax4 - xMin4) * (yMax4 - yMin4) * (zMax4 - zMin4);
-        Debug.Log(volume1);
-        Debug.Log(volume2);
-        Debug.Log(volume3);
-        Debug.Log(volume4);
 
         if (volume1 >= volume2 && volume1 >= volume3 && volume1 >= volume4) {
             return (new Point(xMin12, yMin1, zMin1), new Point(xMax12, yMax1, zMax1));
@@ -378,8 +363,8 @@ public class DungeonRoom {
     // variables to find where the room will be placed within the bounds of the open hyperrectangle
     // It is assumed the room is a hyperrectangle being placed within the free hyperrectangle
     public static Point PickAnchorPoint(SuperMap superMap, System.Random random, Point nextRoomLocation, (Point, Point) nextRoomBounds, RoomSkeleton nextRoomSkeleton) {
-        Debug.Log("Lower Bound = " + nextRoomBounds.Item1.x + ", y = " + nextRoomBounds.Item1.y + ", z = " + nextRoomBounds.Item1.z);
-        Debug.Log("Upder Bound = " + nextRoomBounds.Item2.x + ", y = " + nextRoomBounds.Item2.y + ", z = " + nextRoomBounds.Item2.z);
+        // Debug.Log("Lower Bound = " + nextRoomBounds.Item1.x + ", y = " + nextRoomBounds.Item1.y + ", z = " + nextRoomBounds.Item1.z);
+        // Debug.Log("Upder Bound = " + nextRoomBounds.Item2.x + ", y = " + nextRoomBounds.Item2.y + ", z = " + nextRoomBounds.Item2.z);
         // Determine the free space after the room is placed along each dimension
         // this is given by the total free minus the amount of space the room takes up
         int xMaxDistance = nextRoomBounds.Item2.x - nextRoomBounds.Item1.x - nextRoomSkeleton.xLength;

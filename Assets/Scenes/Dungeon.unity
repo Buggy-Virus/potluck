@@ -155,9 +155,9 @@ RectTransform:
   m_Father: {fileID: 1227136769}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -402, y: -279}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 80, y: 15}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &161810249
@@ -284,9 +284,9 @@ RectTransform:
   m_Father: {fileID: 1227136769}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -402, y: -217}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 81, y: 75.1}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &309478518
@@ -490,9 +490,9 @@ RectTransform:
   m_Father: {fileID: 1227136769}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -402, y: -248}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 80, y: 45.1}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &448059502
@@ -801,6 +801,9 @@ MonoBehaviour:
   SPARSITY_FACTOR: 10
   HORIZONTAL_ALIGNMENT: 5
   VERTICAL_ALIGNMENT: 0
+  FIRST_ROOM: 1
+  REQUIRED_ROOMS: 0200000002000000
+  PORTAL_DISTANCE_FACTOR: 0.7
   EMPTY_PREFAB: {fileID: 3806278205465784993, guid: a5554f9df6e17f84da66abf750240218,
     type: 3}
   terrainScript: {fileID: 1265579059}

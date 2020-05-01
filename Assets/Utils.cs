@@ -14,75 +14,37 @@ public class Utils {
     }
 
     public static bool CheckEmpty(SuperMap superMap, Point a, Point b) {
-        if (a.x < b.x) {
-            for (int i = a.x; i <= b.x; i++) {
-                if (a.y < b.y) {
-                    for (int j = a.y; j <= b.y; j++) {
-                        if (a.z < b.z) {
-                            for (int k = a.z; k <= b.z; k++) {
-                                if(superMap.skeleton[i, j, k] != 0) {
-                                    return false;
-                                }
-                            }
-                        } else {
-                            for (int k = b.z; k <= a.z; k++) {
-                                if(superMap.skeleton[i, j, k] != 0) {
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    for (int j = b.y; j <= a.y; j++) {
-                        if (a.z < b.z) {
-                            for (int k = a.z; k <= b.z; k++) {
-                                if(superMap.skeleton[i, j, k] != 0) {
-                                    return false;
-                                }
-                            }
-                        } else {
-                            for (int k = b.z; k <= a.z; k++) {
-                                if(superMap.skeleton[i, j, k] != 0) {
-                                    return false;
-                                }
-                            }
-                        }
+        if (a.x < 0 || a.y < 0 || a.z < 0 || b.x < 0 || b.y < 0 || b.z < 0 || 
+            a.x >= superMap.xSize || a.y >= superMap.ySize || a.z >= superMap.zSize ||
+            b.x >= superMap.xSize || b.y >= superMap.ySize || b.z >= superMap.zSize) {
+            return false;
+        }
+
+        for (int i = Math.Min(a.x, b.x); i <= Math.Max(a.x, b.x); i++) {
+            for (int j = Math.Min(a.y, b.y); j <= Math.Max(a.y, b.y); j++) {
+                for (int k = Math.Min(a.z, b.z); k <= Math.Max(a.y, b.z); k++) {
+                    if(superMap.skeleton[i, j, k] != 0) {
+                        return false;
                     }
                 }
             }
-        } else {
-            for (int i = b.x; i <= a.x; i++) {
-                if (a.y < b.y) {
-                    for (int j = a.y; j <= b.y; j++) {
-                        if (a.z < b.z) {
-                            for (int k = a.z; k <= b.z; k++) {
-                                if(superMap.skeleton[i, j, k] != 0) {
-                                    return false;
-                                }
-                            }
-                        } else {
-                            for (int k = b.z; k <= a.z; k++) {
-                                if(superMap.skeleton[i, j, k] != 0) {
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    for (int j = b.y; j <= a.y; j++) {
-                        if (a.z < b.z) {
-                            for (int k = a.z; k <= b.z; k++) {
-                                if(superMap.skeleton[i, j, k] != 0) {
-                                    return false;
-                                }
-                            }
-                        } else {
-                            for (int k = b.z; k <= a.z; k++) {
-                                if(superMap.skeleton[i, j, k] != 0) {
-                                    return false;
-                                }
-                            }
-                        }
+        }
+
+        return true;
+    }
+
+    public static bool CheckEmpty(int[,,] map, Point a, Point b) {
+        if (a.x < 0 || a.y < 0 || a.z < 0 || b.x < 0 || b.y < 0 || b.z < 0 || 
+            a.x >= map.GetLength(0) || a.y >= map.GetLength(1) || a.z >= map.GetLength(2) ||
+            b.x >= map.GetLength(0) || b.y >= map.GetLength(1) || b.z >= map.GetLength(2)) {
+            return false;
+        }
+
+        for (int i = Math.Min(a.x, b.x); i <= Math.Max(a.x, b.x); i++) {
+            for (int j = Math.Min(a.y, b.y); j <= Math.Max(a.y, b.y); j++) {
+                for (int k = Math.Min(a.z, b.z); k <= Math.Max(a.y, b.z); k++) {
+                    if(map[i, j, k] != 0) {
+                        return false;
                     }
                 }
             }

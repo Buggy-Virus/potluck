@@ -56,7 +56,7 @@ public class DungeonRoomSkeleton {
         roomSkeleton.skeleton[0, 2, zSize / 2] = 1000;
         xPortalClose.type = 0;
         xPortalClose.width = 0;
-        xPortalClose.height = 0;
+        xPortalClose.height = 1;
         xPortalClose.direction = 4;
         xPortalClose.node = node;
         xPortalClose.edgeCount = 0;
@@ -65,12 +65,12 @@ public class DungeonRoomSkeleton {
 
         Portal zPortalClose = new Portal();
         zPortalClose.point = new Point(xSize / 2, 1, 0);
-        roomSkeleton.skeleton[xEnd / 2, 1, 0] = 1000;
-        roomSkeleton.skeleton[xEnd / 2, 2, 0] = 1000;
+        roomSkeleton.skeleton[xSize / 2, 1, 0] = 1000;
+        roomSkeleton.skeleton[xSize / 2, 2, 0] = 1000;
         zPortalClose.type = 0;
         zPortalClose.width = 0;
-        zPortalClose.height = 0;
-        zPortalClose.direction = 4;
+        zPortalClose.height = 1;
+        zPortalClose.direction = 6;
         zPortalClose.node = node;
         xPortalClose.edgeCount = 0;
         zPortalClose.setup = false;
@@ -82,8 +82,8 @@ public class DungeonRoomSkeleton {
         roomSkeleton.skeleton[xEnd, 2, zSize / 2] = 1000;
         xPortalFar.type = 0;
         xPortalFar.width = 0;
-        xPortalFar.height = 0;
-        xPortalFar.direction = 4;
+        xPortalFar.height = 1;
+        xPortalFar.direction = 1;
         xPortalFar.node = node;
         xPortalFar.edgeCount = 0;
         xPortalFar.setup = false;
@@ -95,8 +95,8 @@ public class DungeonRoomSkeleton {
         roomSkeleton.skeleton[xSize / 2, 2, zEnd] = 1000;
         zPortalFar.type = 0;
         zPortalFar.width = 0;
-        zPortalFar.height = 0;
-        zPortalFar.direction = 4;
+        zPortalFar.height = 1;
+        zPortalFar.direction = 3;
         zPortalFar.node = node;
         zPortalFar.edgeCount = 0;
         zPortalFar.setup = false;

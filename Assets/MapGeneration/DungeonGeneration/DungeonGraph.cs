@@ -383,8 +383,7 @@ public class DungeonGraph {
             distanceThreshold += superMap.sparsityFactor * 0.5;
         }     
 
-        Debug.Log("Zone Adjacency Graph");
-        string graphString = "";
+        string graphString = "Zone Adjacency Graph\n";
         for (int i = 0; i < superMap.zoneGraph.GetLength(0); i++) {
             for (int j = 0; j < superMap.zoneGraph.GetLength(1); j++) {
                 graphString += superMap.zoneGraph[i, j] + " ";
@@ -393,8 +392,7 @@ public class DungeonGraph {
         }   
         Debug.Log(graphString);
 
-        Debug.Log("Zone Connection Counts");
-        string connectionsString = "";
+        string connectionsString = "Zone Connection Counts\n";
         for (int i = 0; i < superMap.zoneGraph.GetLength(0); i++) {
             for (int j = 0; j < superMap.zoneGraph.GetLength(1); j++) {
                 connectionsString += superMap.zoneEdgeGraph[i, j].Count() + " ";

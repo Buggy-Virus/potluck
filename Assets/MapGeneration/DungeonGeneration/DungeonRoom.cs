@@ -29,13 +29,13 @@ public class DungeonRoom {
             nextLocation.y = face.corner00.y;
             nextLocation.z = (face.corner00.z + face.corner11.z) / 2;
         } else if (face.direction == 2 || face.direction == 5) {
-            nextLocation.z = face.corner00.z;
-            nextLocation.y = face.corner00.y;
-            nextLocation.x = (face.corner00.x + face.corner11.x) / 2;
-        } else {
             nextLocation.y = face.corner00.y;
             nextLocation.x = (face.corner00.x + face.corner11.x) / 2;
             nextLocation.z = (face.corner00.z + face.corner11.z) / 2;
+        } else {
+            nextLocation.z = face.corner00.z;
+            nextLocation.y = face.corner00.y;
+            nextLocation.x = (face.corner00.x + face.corner11.x) / 2;
         }
 
         Debug.Log("Next Location Point x = " + nextLocation.x + ", y = " + nextLocation.y + ", z = " + nextLocation.z);
@@ -375,6 +375,8 @@ public class DungeonRoom {
         int x = 0;
         int y = 0;
         int z = 0;
+
+        // TODO: this should place on the lateral axes understand that next location picks y at the bottom of the last room
 
         // Depending on the direction of the face we are placing off of, move away from the
         // face a random distance based on sparsity, and then give a random alignment along

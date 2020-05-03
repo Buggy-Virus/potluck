@@ -15,9 +15,9 @@ public class DungeonGeneration {
         if (superMap.firstRoom != -1) {
             firstRoomType = superMap.firstRoom;
         } else {
-            int firstRequiredRoomInded = random.Next(0, superMap.requiredRooms.Count);
-            superMap.requiredRooms.RemoveAt(firstRequiredRoomInded);
-            firstRoomType = superMap.requiredRooms[firstRequiredRoomInded].type;
+            int firstRequiredRoomIndex = random.Next(0, superMap.requiredRooms.Count);
+            firstRoomType = superMap.requiredRooms[firstRequiredRoomIndex].type;
+            superMap.requiredRooms.RemoveAt(firstRequiredRoomIndex);
         }
         RoomPrefab firstRoomPrefab = DungeonRoom.GetRoomPrefab(firstRoomType);
         RoomSkeleton firstRoomSkeleton = DungeonRoomSkeleton.GenerateRoomSkeleton(random, firstRoomPrefab, (new Point(0,0,0), new Point(superMap.xSize, superMap.ySize, superMap.zSize)));
@@ -29,6 +29,8 @@ public class DungeonGeneration {
             Debug.Log("Generate Rooms While Loop, Required Room Count = " + superMap.requiredRooms.Count + ", Room Count = " + superMap.roomCount);
             Point nextRoomLocation = DungeonRoom.PickNextLocation(superMap, random);
             (Point, Point) nextRoomBounds = DungeonRoom.MeasureFreeSpace(superMap, nextRoomLocation);
+            Debug.Log("Lower Bound x = " + nextRoomBounds.Item1.x + ", y = " + nextRoomBounds.Item1.y + ", z = " + nextRoomBounds.Item1.z);
+            Debug.Log("Uppder Bound x = " + nextRoomBounds.Item2.x + ", y = " + nextRoomBounds.Item2.y + ", z = " + nextRoomBounds.Item2.z);
             
             // Pick the next room, if it isn't a legitimate pick, keep going, the face will have been evicted so we're ok
             Debug.Log("Attempting to find Next Room");
@@ -78,7 +80,6 @@ public class DungeonGeneration {
         Debug.Log("Starting Generate Dungeon Hallways");
 
         superMap = DungeonHallway.CreateEdgePaths(superMap);
-        superMap = DungeonHallway.PlaceHallways(superMap);
 
         return superMap;
     }

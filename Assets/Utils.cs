@@ -22,7 +22,7 @@ public class Utils {
 
         for (int i = Math.Min(a.x, b.x); i <= Math.Max(a.x, b.x); i++) {
             for (int j = Math.Min(a.y, b.y); j <= Math.Max(a.y, b.y); j++) {
-                for (int k = Math.Min(a.z, b.z); k <= Math.Max(a.y, b.z); k++) {
+                for (int k = Math.Min(a.z, b.z); k <= Math.Max(a.z, b.z); k++) {
                     if(superMap.skeleton[i, j, k] != 0) {
                         return false;
                     }
@@ -42,7 +42,7 @@ public class Utils {
 
         for (int i = Math.Min(a.x, b.x); i <= Math.Max(a.x, b.x); i++) {
             for (int j = Math.Min(a.y, b.y); j <= Math.Max(a.y, b.y); j++) {
-                for (int k = Math.Min(a.z, b.z); k <= Math.Max(a.y, b.z); k++) {
+                for (int k = Math.Min(a.z, b.z); k <= Math.Max(a.z, b.z); k++) {
                     if(map[i, j, k] != 0) {
                         Debug.Log("Conflict at x = " + i + ", y = " + j + ", z = " + k);
                         return false;

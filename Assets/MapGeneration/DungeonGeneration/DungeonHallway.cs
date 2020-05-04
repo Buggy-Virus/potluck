@@ -21,9 +21,9 @@ public class DungeonHallway {
         if (!visitedNodes.Contains(adjacent)) {
             if (Utils.CheckEmpty(superMap.skeleton, adjacent + new Point(-edge.width, 0, -edge.width), adjacent + new Point(edge.width, edge.height, edge.width))) {
                 int newDistance = distance[current] + 1;
-                if (distance[adjacent] >= newDistance) {
+                if (!distance.ContainsKey(adjacent) || distance[adjacent] >= newDistance) {
                     queuedNodes.Add(adjacent);
-                    if (distance[adjacent] != newDistance || !CheckStraight(previous, adjacent)) {
+                    if (!previous.ContainsKey(adjacent) || distance[adjacent] != newDistance || !CheckStraight(previous, adjacent)) {
                         previous[adjacent] = current;
                     }
                     distance[adjacent] = newDistance;
@@ -93,6 +93,14 @@ public class DungeonHallway {
         }
     }
 
+    static SuperMap DrawEdge(SuperMap superMap, Edge edge) {
+        foreach(Point point in edge.path) {
+            superMap.skeleton = DrawSegmentDirection(superMap.skeleton, point, edge.height, edge.width, 1);
+        }
+
+        return superMap;
+    }
+
     // Set of methods to check whether space is empty in a specific direction off a point
     delegate bool CheckDirectionMethod (int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current);
     static bool CheckDirection1(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
@@ -104,6 +112,8 @@ public class DungeonHallway {
     static bool CheckDirection2(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y + 1, current.z - edge.width);
         Point point11 = new Point(current.x + edge.width, current.y + 1, current.z + edge.width);
+        Debug.Log("point00 x = " + point00.x + ", y = " + point00.y + ", z = " + point00.z);
+        Debug.Log("point11 x = " + point11.x + ", y = " + point11.y + ", z = " + point11.z);
         return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x, current.y + 1, current.z];
     }
 
@@ -114,14 +124,16 @@ public class DungeonHallway {
     }
 
     static bool CheckDirection4(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
-        Point point00 = new Point(current.x - edge.width, current.y + 1, current.z - edge.width);
-        Point point11 = new Point(current.x + edge.width, current.y + 1, current.z + edge.width);
-        return Utils.CheckEmpty(skeleton, point00, point11)  && !pathPoints[current.x - 1, current.y, current.z];
+        Point point00 = new Point(current.x - 1, current.y, current.z - edge.width);
+        Point point11 = new Point(current.x - 1, current.y + edge.height, current.z + edge.width);
+        return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x + 1, current.y, current.z];
     }
 
     static bool CheckDirection5(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y - 1, current.z - edge.width);
         Point point11 = new Point(current.x + edge.width, current.y - 1, current.z + edge.width);
+        Debug.Log("point00 x = " + point00.x + ", y = " + point00.y + ", z = " + point00.z);
+        Debug.Log("point11 x = " + point11.x + ", y = " + point11.y + ", z = " + point11.z);
         return Utils.CheckEmpty(skeleton, point00, point11)  && !pathPoints[current.x, current.y - 1, current.z];
     }
 

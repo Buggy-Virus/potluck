@@ -5,43 +5,130 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class DungeonHallway {
+    static bool CheckStraight(Dictionary<Point, Point> previous, Point adjacent) {
+        return (adjacent.x != previous[adjacent].x && previous[adjacent].x != previous[previous[adjacent]].x) ||
+               (adjacent.y != previous[adjacent].y && previous[adjacent].y != previous[previous[adjacent]].y) ||
+               (adjacent.z != previous[adjacent].z && previous[adjacent].z != previous[previous[adjacent]].z);
+    }
+
+    static bool CheckStraight(Dictionary<Point, Point> previous, Point adjacent, Point current) {
+        return (adjacent.x != current.x && previous[current].x != previous[previous[current]].x) ||
+               (adjacent.y != current.y && previous[current].y != previous[previous[current]].y) ||
+               (adjacent.z != current.z && previous[current].z != previous[previous[current]].z);
+    }
+
+    static (Dictionary<Point, int>, Dictionary<Point, Point>, HashSet<Point>, HashSet<Point>) UpdateAdjacent(Dictionary<Point, int> distance, Dictionary<Point, Point> previous, HashSet<Point> visitedNodes, HashSet<Point> queuedNodes, SuperMap superMap, Edge edge, Point current, Point adjacent) {
+        if (!visitedNodes.Contains(adjacent)) {
+            if (Utils.CheckEmpty(superMap.skeleton, adjacent + new Point(-edge.width, 0, -edge.width), adjacent + new Point(edge.width, edge.height, edge.width))) {
+                int newDistance = distance[current] + 1;
+                if (distance[adjacent] >= newDistance) {
+                    queuedNodes.Add(adjacent);
+                    if (distance[adjacent] != newDistance || !CheckStraight(previous, adjacent)) {
+                        previous[adjacent] = current;
+                    }
+                    distance[adjacent] = newDistance;
+                }
+            } else {
+                visitedNodes.Add(adjacent);
+            }
+        }
+        
+        return (distance, previous, visitedNodes, queuedNodes);
+    }
+
+    static Point GetMinimumQueued(Dictionary<Point, int> distance, HashSet<Point> queuedNodes) {
+        int min = int.MaxValue;
+        Point minPoint = new Point();
+        foreach (Point point in queuedNodes) {
+            if (distance[point] < min) {
+                min = distance[point];
+                minPoint = point;
+            }
+        }
+        
+        return minPoint;
+    }
+
+    static List<Point> GetPath(Dictionary<Point, Point> previous, Point endPoint) {
+        List<Point> path = new List<Point>() {endPoint};
+        Point current = endPoint;
+        while(previous.ContainsKey(current)) {
+            path.Add(previous[current]);
+            current = previous[current];
+        }
+        path.Reverse();
+
+        return path;
+    }
+
+    static List<Point> DjikstraHallway (SuperMap superMap, Edge edge, Point start, Point end) {
+        Dictionary<Point, int> distance = new Dictionary<Point, int>();
+        Dictionary<Point, Point> previous = new Dictionary<Point, Point>();
+        HashSet<Point> visitedNodes = new HashSet<Point>();
+        HashSet<Point> queuedNodes = new HashSet<Point>();
+
+        distance[start] = 0;
+        Point current = start; 
+        queuedNodes.Add(start);
+
+        while(!visitedNodes.Contains(end) && queuedNodes.Count() > 0) {
+            visitedNodes.Add(current);
+            queuedNodes.Remove(current);
+            int newDistance = distance[current] + 1;
+
+            (distance, previous, visitedNodes, queuedNodes) = UpdateAdjacent(distance, previous, visitedNodes, queuedNodes, superMap, edge, current, new Point(current.x + 1, current.y, current.z));
+            (distance, previous, visitedNodes, queuedNodes) = UpdateAdjacent(distance, previous, visitedNodes, queuedNodes, superMap, edge, current, new Point(current.x, current.y + 1, current.z));
+            (distance, previous, visitedNodes, queuedNodes) = UpdateAdjacent(distance, previous, visitedNodes, queuedNodes, superMap, edge, current, new Point(current.x, current.y, current.z + 1));
+            (distance, previous, visitedNodes, queuedNodes) = UpdateAdjacent(distance, previous, visitedNodes, queuedNodes, superMap, edge, current, new Point(current.x - 1, current.y, current.z));
+            (distance, previous, visitedNodes, queuedNodes) = UpdateAdjacent(distance, previous, visitedNodes, queuedNodes, superMap, edge, current, new Point(current.x, current.y - 1, current.z));
+            (distance, previous, visitedNodes, queuedNodes) = UpdateAdjacent(distance, previous, visitedNodes, queuedNodes, superMap, edge, current, new Point(current.x, current.y, current.z - 1));
+
+            current = GetMinimumQueued(distance, queuedNodes);
+        }
+
+        if (visitedNodes.Contains(end)) {
+            return GetPath(previous, end);
+        } else {
+            return new List<Point>();
+        }
+    }
 
     // Set of methods to check whether space is empty in a specific direction off a point
     delegate bool CheckDirectionMethod (int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current);
     static bool CheckDirection1(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
-        Point point00 = new Point(current.x + 1, current.z - edge.width, current.y);
-        Point point11 = new Point(current.x + 1, current.z + edge.width, current.y + edge.height);
-        return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x + 1, current.z, current.y];
+        Point point00 = new Point(current.x + 1, current.y, current.z - edge.width);
+        Point point11 = new Point(current.x + 1, current.y + edge.height, current.z + edge.width);
+        return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x + 1, current.y, current.z];
     }
 
     static bool CheckDirection2(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y + 1, current.z - edge.width);
         Point point11 = new Point(current.x + edge.width, current.y + 1, current.z + edge.width);
-        return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x, current.z + 1, current.y];
+        return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x, current.y + 1, current.z];
     }
 
     static bool CheckDirection3(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y, current.z + 1);
         Point point11 = new Point(current.x + edge.width, current.y + edge.height, current.z + 1);
-        return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x, current.z, current.y + 1];
+        return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x, current.y, current.z + 1];
     }
 
     static bool CheckDirection4(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y + 1, current.z - edge.width);
         Point point11 = new Point(current.x + edge.width, current.y + 1, current.z + edge.width);
-        return Utils.CheckEmpty(skeleton, point00, point11)  && !pathPoints[current.x - 1, current.z, current.y];
+        return Utils.CheckEmpty(skeleton, point00, point11)  && !pathPoints[current.x - 1, current.y, current.z];
     }
 
     static bool CheckDirection5(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y - 1, current.z - edge.width);
         Point point11 = new Point(current.x + edge.width, current.y - 1, current.z + edge.width);
-        return Utils.CheckEmpty(skeleton, point00, point11)  && !pathPoints[current.x, current.z - 1, current.y];
+        return Utils.CheckEmpty(skeleton, point00, point11)  && !pathPoints[current.x, current.y - 1, current.z];
     }
 
     static bool CheckDirection6(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y, current.z - 1);
         Point point11 = new Point(current.x + edge.width, current.y + edge.height, current.z - 1);
-        return Utils.CheckEmpty(skeleton, point00, point11)  && !pathPoints[current.x, current.z, current.y - 1];
+        return Utils.CheckEmpty(skeleton, point00, point11)  && !pathPoints[current.x, current.y, current.z - 1];
     }
 
     static List<CheckDirectionMethod> CheckDirections = new List<CheckDirectionMethod>() {
@@ -56,7 +143,7 @@ public class DungeonHallway {
     delegate int[,,] DrawSegmentMethod (int[,,] skeleton, Point point, int height, int width, int value);
 
     static int[,,] DrawSegmentDirection(int[,,] skeleton, Point point, int height, int width, int value) {
-        return SetSegmentSkeleton(skeleton, point + new Point(-width, 0, -width), point + new Point(width, height, width), value);
+        return DrawSegmentSkeleton(skeleton, point + new Point(-width, 0, -width), point + new Point(width, height, width), value);
     }
 
     static int[,,] DrawSegmentDirection14(int[,,] skeleton, Point point, int height, int width, int value) {
@@ -214,7 +301,7 @@ public class DungeonHallway {
     static int[,,] DrawSegmentSkeleton(int[,,] hallwaySkeleton, Point a, Point b, int value) {
         for (int i = Math.Min(a.x, b.x); i <= Math.Max(a.x, b.x); i++) {
             for (int j = Math.Min(a.y, b.y); j <= Math.Max(a.y, b.y); j++) {
-                for (int k = Math.Min(a.z, b.z); k <= Math.Max(a.y, b.z); k++) {
+                for (int k = Math.Min(a.z, b.z); k <= Math.Max(a.z, b.z); k++) {
                     hallwaySkeleton[i, j, k] += value;
                 }
             }
@@ -244,7 +331,7 @@ public class DungeonHallway {
         if (CheckDirections[direction - 1](superMap.skeleton, hallwayPoints, edge, current)) {
             int directionIndex = direction - 1;
             Point newPoint = NextPointMethods[directionIndex](current);
-            hallwaySkeleton = DrawSegments[directionIndex](hallwaySkeleton, newPoint, edge.height, edge.width, 1);
+            hallwaySkeleton = DrawSegmentDirection(hallwaySkeleton, newPoint, edge.height, edge.width, 1);
             (xLeft, yLeft, zLeft) = UpdateDistancesMethods[directionIndex](xLeft, yLeft, zLeft);
             edge.path.Add(newPoint);
             Debug.Log("Next x = " + newPoint.x + ", y = " + newPoint.y + ", z = " + newPoint.z);
@@ -311,14 +398,12 @@ public class DungeonHallway {
                 // If so, we found a turn and update the direction, and move the path
                 // one unit in the new direction
                 foundTurn = true;
-                hallwaySkeleton = CapPathMethods[direction - 1](hallwaySkeleton, current, edge.height, edge.width, 1);
-                int newDirection = maxIndex + 1;
-                edge.directions.Add(newDirection);
+                edge.directions.Add(maxIndex + 1);
                 Point next = NextPointMethods[maxIndex](current);
                 edge.path.Add(next);
                 Debug.Log("Next x = " + next.x + ", y = " + next.y + ", z = " + next.z);
                 hallwayPoints = FlipPoint(hallwayPoints, next);
-                hallwaySkeleton = DrawSegments[maxIndex](hallwaySkeleton, next, edge.height, edge.width, 1);
+                hallwaySkeleton = DrawSegmentDirection(hallwaySkeleton, next, edge.height, edge.width, 1);
                 (xLeft, yLeft, zLeft) = UpdateDistancesMethods[maxIndex](xLeft, yLeft, zLeft);
             } else {
                 // Otherwise that's one less available direction, and we don't check
@@ -353,11 +438,10 @@ public class DungeonHallway {
                 } else {
                     failedTurns[pivotPoint] = new List<int>() {lastDirection};
                 }
-                hallwaySkeleton = CapPathMethods[pivotDirection - 1](hallwaySkeleton, pivotPoint, edge.height, edge.width, -1);
             }
         }
 
-        hallwaySkeleton = DrawSegments[lastDirection - 1](hallwaySkeleton, lastPoint, edge.height, edge.width, -1);
+        hallwaySkeleton = DrawSegmentDirection(hallwaySkeleton, lastPoint, edge.height, edge.width, -1);
         (xLeft, yLeft, zLeft) = UpdateDistancesMethods[(lastDirection + 3) % 6](xLeft, yLeft, zLeft);
         hallwayPoints = FlipPoint(hallwayPoints, lastPoint);
         edge.path.RemoveAt(edge.path.Count() - 1);
@@ -493,28 +577,33 @@ public class DungeonHallway {
                 pathCounter++;
                 Debug.Log("Attempting next move, xLeft = " + xLeft + ", yLeft = " + yLeft + ", zLeft = " + zLeft + ", path count = " + edge.path.Count());
                 if (tryForward && (GoodDirection(edge.directions.Last(), xLeft, yLeft, zLeft))) {
+                    Debug.Log("Good Direct Attempt Forward");
                     (tryForward, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft) = AttemptForward(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, edge.path.Last());
                     if (tryForward) {
                         tryFavorableTurn = true;
                         tryTurn = true;
                     }
                 } else if (tryFavorableTurn) {
+                    Debug.Log("Favorable attempt turn");
                     (tryFavorableTurn, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns) = AttemptTurn(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, true, failedTurns);
                     if (tryFavorableTurn) {
                         tryForward = true;
                     }
                 } else if (tryTurn) {
+                    Debug.Log("Attempt Turn");
                     (tryTurn, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns) = AttemptTurn(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, false, failedTurns);
                     if (tryTurn) {
                         tryForward = true;
                     }
                 } else if (tryForward) {
+                    Debug.Log("Attempt Forward");
                     (tryForward, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft) = AttemptForward(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, edge.path.Last());
                     if (tryForward) {
                         tryFavorableTurn = true;
                         tryTurn = true;
                     }
                 } else {
+                    Debug.Log("Backtracking");
                     (edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns) = BackTrack(edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns);
                     tryTurn = true;
                 }

@@ -75,7 +75,8 @@ public class MapScript : MonoBehaviour
             for (int x = 0; x < skeleton.GetLength(0); x++) {
                 for (int z = 0; z < skeleton.GetLength(2); z++) {
                     if (skeleton[x, y, z] == 1) {
-                        Instantiate(terrainScript.terrainDict[skeleton[x, y, z]], new Vector3(x, y, z), Quaternion.identity, row.transform);
+                        GameObject cube = Instantiate(terrainScript.terrainDict[skeleton[x, y, z]], new Vector3(x, y, z), Quaternion.identity, row.transform);
+                        cube.name = "" + x + ", " + y + ", " + z;
                     }
                 }
             }

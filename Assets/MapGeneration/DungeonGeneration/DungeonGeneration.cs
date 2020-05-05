@@ -27,7 +27,9 @@ public class DungeonGeneration {
         // Repeatedly add new rooms until all required rooms are placed and total rooms exceeds target room count
         while(superMap.requiredRooms.Count > 0 || superMap.roomCount <= superMap.targetRoomCount) {
             Debug.Log("Generate Rooms While Loop, Required Room Count = " + superMap.requiredRooms.Count + ", Room Count = " + superMap.roomCount);
-            Point nextRoomLocation = DungeonRoom.PickNextLocation(superMap, random);
+            Point nextRoomLocation;
+            int nextDirection;
+            (nextRoomLocation, nextDirection) = DungeonRoom.PickNextLocation(superMap, random);
             (Point, Point) nextRoomBounds = DungeonRoom.MeasureFreeSpace(superMap, nextRoomLocation);
             Debug.Log("Lower Bound x = " + nextRoomBounds.Item1.x + ", y = " + nextRoomBounds.Item1.y + ", z = " + nextRoomBounds.Item1.z);
             Debug.Log("Uppder Bound x = " + nextRoomBounds.Item2.x + ", y = " + nextRoomBounds.Item2.y + ", z = " + nextRoomBounds.Item2.z);
@@ -39,7 +41,7 @@ public class DungeonGeneration {
                 Debug.Log("Found next Room Type = " + nextRoomType);
                 RoomPrefab nextRoomPrefab = DungeonRoom.GetRoomPrefab(nextRoomType);
                 RoomSkeleton nextRoomSkeleton = DungeonRoomSkeleton.GenerateRoomSkeleton(random, nextRoomPrefab, nextRoomBounds);
-                Point nextRoomAnchorPoint = DungeonRoom.PickAnchorPoint(superMap, random, nextRoomLocation, nextRoomBounds, nextRoomSkeleton); 
+                Point nextRoomAnchorPoint = DungeonRoom.PickAnchorPoint(superMap, random, nextRoomLocation, nextRoomBounds, nextDirection, nextRoomSkeleton); 
                 superMap = DungeonRoom.PlaceRoom(superMap, nextRoomSkeleton, nextRoomAnchorPoint, nextRoomPrefab);
                 Debug.Log("Placed Room");
             }

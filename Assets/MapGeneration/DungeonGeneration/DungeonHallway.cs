@@ -112,8 +112,6 @@ public class DungeonHallway {
     static bool CheckDirection2(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y + 1, current.z - edge.width);
         Point point11 = new Point(current.x + edge.width, current.y + 1, current.z + edge.width);
-        Debug.Log("point00 x = " + point00.x + ", y = " + point00.y + ", z = " + point00.z);
-        Debug.Log("point11 x = " + point11.x + ", y = " + point11.y + ", z = " + point11.z);
         return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x, current.y + 1, current.z];
     }
 
@@ -132,8 +130,6 @@ public class DungeonHallway {
     static bool CheckDirection5(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y - 1, current.z - edge.width);
         Point point11 = new Point(current.x + edge.width, current.y - 1, current.z + edge.width);
-        Debug.Log("point00 x = " + point00.x + ", y = " + point00.y + ", z = " + point00.z);
-        Debug.Log("point11 x = " + point11.x + ", y = " + point11.y + ", z = " + point11.z);
         return Utils.CheckEmpty(skeleton, point00, point11)  && !pathPoints[current.x, current.y - 1, current.z];
     }
 
@@ -346,7 +342,6 @@ public class DungeonHallway {
             hallwaySkeleton = DrawSegmentDirection(hallwaySkeleton, newPoint, edge.height, edge.width, 1);
             (xLeft, yLeft, zLeft) = UpdateDistancesMethods[directionIndex](xLeft, yLeft, zLeft);
             edge.path.Add(newPoint);
-            Debug.Log("Next x = " + newPoint.x + ", y = " + newPoint.y + ", z = " + newPoint.z);
             hallwayPoints = FlipPoint(hallwayPoints, newPoint);
             edge.directions.Add(direction);
         } else {
@@ -359,7 +354,6 @@ public class DungeonHallway {
 
     // Try for a point to turn
     static (bool, Edge, int[,,], bool[,,], int, int, int, Dictionary<Point, List<int>>) AttemptTurn(SuperMap superMap, Edge edge, int[,,] hallwaySkeleton, bool[,,] hallwayPoints, int xLeft, int yLeft, int zLeft, bool favorable, Dictionary<Point, List<int>> failedTurns) {
-        Debug.Log("Attempting a Turn");
         Point current = edge.path.Last();
         int direction = edge.directions.Last();
 
@@ -393,7 +387,6 @@ public class DungeonHallway {
         // false and be returned
         bool foundTurn = false;
         while (availableDirections > 0 && !foundTurn) {
-            Debug.Log("Haven't found a turn, available directions = " + availableDirections.ToString());
             // Find the direction with the best score
             int max = int.MinValue;
             int maxIndex = -1;
@@ -406,14 +399,12 @@ public class DungeonHallway {
             
             // check if we can turn in the direction of the best available direction
             if (CheckDirections[maxIndex](superMap.skeleton, hallwayPoints, edge, current)) {
-                Debug.Log("Found a turn");
                 // If so, we found a turn and update the direction, and move the path
                 // one unit in the new direction
                 foundTurn = true;
                 edge.directions.Add(maxIndex + 1);
                 Point next = NextPointMethods[maxIndex](current);
                 edge.path.Add(next);
-                Debug.Log("Next x = " + next.x + ", y = " + next.y + ", z = " + next.z);
                 hallwayPoints = FlipPoint(hallwayPoints, next);
                 hallwaySkeleton = DrawSegmentDirection(hallwaySkeleton, next, edge.height, edge.width, 1);
                 (xLeft, yLeft, zLeft) = UpdateDistancesMethods[maxIndex](xLeft, yLeft, zLeft);
@@ -474,10 +465,11 @@ public class DungeonHallway {
     }
 
     static Point GetClosestSegment(Portal portal, Point point) {
+        Debug.Log("GetClosestSegment");
         Edge connectorEdge = new Edge();
         bool found = false;
         foreach (Edge edge in portal.edges) {
-            if (edge.path.Count() > 0 && ((edge.hitSource && edge.source.point == portal.point) || (edge.hitSink && edge.sink.point == portal.point))) {
+            if (edge.path.Count() > 0 && ((edge.hitSource && edge.source.point == GetPortalAdjacent(portal)) || (edge.hitSink && edge.sink.point == GetPortalAdjacent(portal)))) {
                 connectorEdge = edge;
                 found = true;
                 break;
@@ -485,8 +477,10 @@ public class DungeonHallway {
         }
         
         if (!found) {
+            Debug.Log("Here");
             return GetPortalAdjacent(portal);
         }
+        Debug.Log("There");
 
         Point closestPoint = new Point();
         double minDistance = int.MaxValue;
@@ -577,45 +571,32 @@ public class DungeonHallway {
             bool tryTurn = true;
             Dictionary<Point, List<int>> failedTurns = new Dictionary<Point, List<int>>();
 
-            // As long as there is still distance to go, and we haven't erased the whole path
-            // Continue
-            // The whole path only gets erased if there is no possible path and we end up backtracking
-            // over the start point
-            // If we turn in a direction, but we end up needing to backtrack back over the turn, it's recorded
-            // As a failed turn, so we never attempt to turn in that direction again, this keeps us from endless
-            // Attempting to draw paths and creates scenarios where we can't find an available path and backtrack to the start
             int pathCounter = 0;
             while ((xLeft != 0 || yLeft != 0 || zLeft != 0) && edge.path.Count() > 0 && pathCounter < 100) {
                 pathCounter++;
-                Debug.Log("Attempting next move, xLeft = " + xLeft + ", yLeft = " + yLeft + ", zLeft = " + zLeft + ", path count = " + edge.path.Count());
                 if (tryForward && (GoodDirection(edge.directions.Last(), xLeft, yLeft, zLeft))) {
-                    Debug.Log("Good Direct Attempt Forward");
                     (tryForward, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft) = AttemptForward(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, edge.path.Last());
                     if (tryForward) {
                         tryFavorableTurn = true;
                         tryTurn = true;
                     }
                 } else if (tryFavorableTurn) {
-                    Debug.Log("Favorable attempt turn");
                     (tryFavorableTurn, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns) = AttemptTurn(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, true, failedTurns);
                     if (tryFavorableTurn) {
                         tryForward = true;
                     }
                 } else if (tryTurn) {
-                    Debug.Log("Attempt Turn");
                     (tryTurn, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns) = AttemptTurn(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, false, failedTurns);
                     if (tryTurn) {
                         tryForward = true;
                     }
                 } else if (tryForward) {
-                    Debug.Log("Attempt Forward");
                     (tryForward, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft) = AttemptForward(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, edge.path.Last());
                     if (tryForward) {
                         tryFavorableTurn = true;
                         tryTurn = true;
                     }
                 } else {
-                    Debug.Log("Backtracking");
                     (edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns) = BackTrack(edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns);
                     tryTurn = true;
                 }

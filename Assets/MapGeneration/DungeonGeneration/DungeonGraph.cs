@@ -109,7 +109,6 @@ public class DungeonGraph {
             node.id = id;
         }
         
-        Debug.Log("Final node id = " + id.ToString());
         return superMap;
     }
 
@@ -179,8 +178,6 @@ public class DungeonGraph {
     // Create a zone based on the superMaps target zone size, and connecting nearby nodes from a starting node
     // excludes a set of nodes if listed
     static SuperMap DefineZone(SuperMap superMap, System.Random random, int start, int zoneNum, int type, List<int> exclude) {
-        Debug.Log("DefineZone Starting");
-
         // Pick the target total nodes in the zone based on the supermap parameter
         int totalNodes = superMap.targetZoneSize + random.Next(0, superMap.zoneRange) - superMap.zoneRange / 2;
         // Create the zone object
@@ -200,7 +197,6 @@ public class DungeonGraph {
         // While the number of nodes is less than the target total nodes
         // and there are still zone portals to connect
         while (zone.nodes.Count() < totalNodes && zonePortals.Count() > 0) {
-            Debug.Log("Define Zone While Loop, totalNodes = " + zone.nodes.Count().ToString() + ", zonePortals = " + zonePortals.Count().ToString());
             // Pick the next portal to connect
             Portal startPortal = PickStartPortal(random, zonePortals);
             // Pick an eligible portal to connect it to, and thus the next node to add
@@ -208,10 +204,8 @@ public class DungeonGraph {
             // If it connected with itself we couldn't find a good end portal, so that
             // portal is dead and we evict it as a potential start portal
             if (endPortal == startPortal) { // Couldn't find an end portal
-                Debug.Log("Couldn't get matching portal, evicting");
                 zonePortals.Remove(startPortal);
             } else {
-                Debug.Log("Got sink portal");
                 // If we got a good end portal we add a new edge between the two nodes
                 Edge edge = new Edge(startPortal, endPortal);
                 superMap.naiveGraph[startPortal.node.id, endPortal.node.id] += 1;
@@ -219,7 +213,6 @@ public class DungeonGraph {
 
                 // If the endportal node was not already in the zone we add it
                 if (endPortal.node.zone != zoneNum) {
-                    Debug.Log("Adding node to zone");
                     endPortal.node.zone = zoneNum;
                     zone.nodes.Add(endPortal.node);
                     zonePortals = zonePortals.Concat(endPortal.node.portals).ToList();
@@ -308,7 +301,6 @@ public class DungeonGraph {
 
         // While the zone graph is not connected introduce more connections to the zone graph
         while (disconnectedZones.Count() > 0) {
-            Debug.Log("Not connected, running through all zones to attempt connections");
             // Consider a connection between every two zones
             foreach (int sourceZoneId in disconnectedZones) {
                 Zone sourceZone = superMap.zones[sourceZoneId];
@@ -357,10 +349,8 @@ public class DungeonGraph {
 
                             double sinkRoll = random.NextDouble() * sinkTotal;
                             Portal sinkPortal = new Portal();
-                            Debug.Log("sinkCutoffs = " + sinkCutoffs.Count());
                             foreach (Tuple<Portal, double> cutoff in sinkCutoffs) {
                                 if (sinkRoll > cutoff.Item2) {
-                                    Debug.Log("Here");
                                     sinkPortal = cutoff.Item1;
                                 } else {
                                     break;
@@ -453,7 +443,6 @@ public class DungeonGraph {
 
         // Do it for the rest of the edges, now allowing edges that aren't necessarily accessible
         while (unpainted.Count() > 0) {
-            Debug.Log("Edges still to be painted, total unpainted edges = " + unpainted.Count().ToString());
             // Pick a random edge And remove it from the edges to paint
             Edge edge = unpainted[random.Next(0, unpainted.Count())];
             unpainted.Remove(edge);
@@ -505,7 +494,6 @@ public class DungeonGraph {
         
         // While the queue is not empty, add paint the edges to all adjacent zones which have been setup
         while (queued.Count() > 0) {
-            Debug.Log("Edge Condition queue = " + queued.Count().ToString() + ", accessibleZones = " + accessibleZones.Count().ToString());
             // Pick one at random from the queued
             int current = queued[random.Next(0, queued.Count())];
             queued.Remove(current);

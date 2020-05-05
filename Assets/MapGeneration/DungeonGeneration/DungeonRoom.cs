@@ -8,7 +8,7 @@ public class DungeonRoom {
 
     // Takes a superMap and based on it's open faces chooses the next open face at random
     // to build the next room off of
-    public static Point PickNextLocation(SuperMap superMap, System.Random random) {
+    public static (Point, int) PickNextLocation(SuperMap superMap, System.Random random) {
         // Randomly pick an open face from the list of open faces
         // The next room will be build "off" of this face
         int openFaceIndex = random.Next(superMap.openFaces.Count());
@@ -39,7 +39,7 @@ public class DungeonRoom {
         }
 
         Debug.Log("Next Location Point x = " + nextLocation.x + ", y = " + nextLocation.y + ", z = " + nextLocation.z);
-        return nextLocation;
+        return (nextLocation, face.direction);
     }
 
     // Take a room type and returns it's prefab
@@ -362,7 +362,7 @@ public class DungeonRoom {
     // Based on a roomsekelton and the point the room is being positioned off, use the superMap placement
     // variables to find where the room will be placed within the bounds of the open hyperrectangle
     // It is assumed the room is a hyperrectangle being placed within the free hyperrectangle
-    public static Point PickAnchorPoint(SuperMap superMap, System.Random random, Point nextRoomLocation, (Point, Point) nextRoomBounds, RoomSkeleton nextRoomSkeleton) {
+    public static Point PickAnchorPoint(SuperMap superMap, System.Random random, Point nextRoomLocation, (Point, Point) nextRoomBounds, int direction, RoomSkeleton nextRoomSkeleton) {
         // Debug.Log("Lower Bound = " + nextRoomBounds.Item1.x + ", y = " + nextRoomBounds.Item1.y + ", z = " + nextRoomBounds.Item1.z);
         // Debug.Log("Upder Bound = " + nextRoomBounds.Item2.x + ", y = " + nextRoomBounds.Item2.y + ", z = " + nextRoomBounds.Item2.z);
         // Determine the free space after the room is placed along each dimension
@@ -381,23 +381,23 @@ public class DungeonRoom {
         // Depending on the direction of the face we are placing off of, move away from the
         // face a random distance based on sparsity, and then give a random alignment along
         // the other dimensions
-        if (nextRoomLocation.x == nextRoomBounds.Item1.x) {
+        if (direction == 1) {
             x = nextRoomLocation.x + (int)(superMap.horizontalSparsity * random.NextDouble());
             z = nextRoomLocation.z + (int)(superMap.horizontalAlignMent * (random.NextDouble() - 0.5)) - (nextRoomSkeleton.zLength / 2);
             y = nextRoomLocation.y + (int)(superMap.verticalAlignMent * (random.NextDouble() - 0.5));
-        } else if (nextRoomLocation.z == nextRoomBounds.Item1.z) {
+        } else if (direction == 2) {
             z = nextRoomLocation.z + (int)(superMap.horizontalSparsity * random.NextDouble());
             x = nextRoomLocation.x + (int)(superMap.horizontalAlignMent * (random.NextDouble() - 0.5)) - (nextRoomSkeleton.xLength / 2);
             y = nextRoomLocation.y + (int)(superMap.verticalAlignMent * (random.NextDouble() - 0.5));
-        } else if (nextRoomLocation.y == nextRoomBounds.Item1.y) {
+        } else if (direction == 3) {
             y = nextRoomLocation.y + (int)(superMap.verticalSparsity * random.NextDouble());
             x = nextRoomLocation.x + (int)(superMap.horizontalAlignMent * (random.NextDouble() - 0.5)) - (nextRoomSkeleton.xLength / 2);
             z = nextRoomLocation.z + (int)(superMap.horizontalAlignMent * (random.NextDouble() - 0.5)) - (nextRoomSkeleton.zLength / 2);
-        } else if (nextRoomLocation.x == nextRoomBounds.Item2.x) {
+        } else if (direction == 4) {
             x = nextRoomLocation.x - (int)(superMap.horizontalSparsity * random.NextDouble()) - nextRoomSkeleton.xLength;
             z = nextRoomLocation.z + (int)(superMap.horizontalAlignMent * (random.NextDouble() - 0.5)) - (nextRoomSkeleton.zLength / 2);
             y = nextRoomLocation.y + (int)(superMap.verticalAlignMent * (random.NextDouble() - 0.5));
-        } else if (nextRoomLocation.x == nextRoomBounds.Item2.z) {
+        } else if (direction == 5) {
             z = nextRoomLocation.z - (int)(superMap.horizontalSparsity * random.NextDouble()) - nextRoomSkeleton.zLength;
             x = nextRoomLocation.x + (int)(superMap.horizontalAlignMent * (random.NextDouble() - 0.5)) - (nextRoomSkeleton.xLength / 2);
             y = nextRoomLocation.y + (int)(superMap.verticalAlignMent * (random.NextDouble() - 0.5));

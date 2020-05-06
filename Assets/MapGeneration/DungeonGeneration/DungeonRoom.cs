@@ -482,4 +482,29 @@ public class DungeonRoom {
         
         return superMap;
     }
+
+    public static SuperMap MarkBlockedPortals(SuperMap superMap) {
+        foreach (Portal portal in superMap.portals) {
+            Point adjacentPoint;
+            if (portal.direction == 1) {
+                adjacentPoint = portal.point + new Point(1, 0, 0);
+            } else if (portal.direction == 1) {
+                adjacentPoint = portal.point + new Point(0, 1, 0);
+            } else if (portal.direction == 1) {
+                adjacentPoint = portal.point + new Point(0, 0, 1);
+            } else if (portal.direction == 1) {
+                adjacentPoint = portal.point + new Point(-1, 0, 0);
+            } else if (portal.direction == 1) {
+                adjacentPoint = portal.point + new Point(0, -1, 0);
+            } else {
+                adjacentPoint = portal.point + new Point(0, 0, -1);
+            }
+
+            if (superMap.skeleton[adjacentPoint.x, adjacentPoint.y, adjacentPoint.z] != 0) {
+                portal.blocked = true;
+            }
+        }
+
+        return superMap;
+    }
 }

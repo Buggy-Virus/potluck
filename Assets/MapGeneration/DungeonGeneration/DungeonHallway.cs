@@ -466,25 +466,10 @@ public class DungeonHallway {
 
     static Point GetClosestSegment(Portal portal, Point point) {
         Debug.Log("GetClosestSegment");
-        Edge connectorEdge = new Edge();
-        bool found = false;
-        foreach (Edge edge in portal.edges) {
-            if (edge.path.Count() > 0 && ((edge.hitSource && edge.source.point == GetPortalAdjacent(portal)) || (edge.hitSink && edge.sink.point == GetPortalAdjacent(portal)))) {
-                connectorEdge = edge;
-                found = true;
-                break;
-            }
-        }
-        
-        if (!found) {
-            Debug.Log("Here");
-            return GetPortalAdjacent(portal);
-        }
-        Debug.Log("There");
-
         Point closestPoint = new Point();
         double minDistance = int.MaxValue;
-        foreach (Point segment in connectorEdge.path) {
+        Debug.Log(portal.connectingEdge.path.Count());
+        foreach (Point segment in portal.connectingEdge.path) {
             double currentDistance = Utils.Distance(segment, point);
             if (currentDistance < minDistance) {
                 closestPoint = segment;
@@ -530,6 +515,7 @@ public class DungeonHallway {
             startPoint = GetClosestSegment(edge.source, edge.sink.point);
         } else {
             startPoint = GetPortalAdjacent(edge.source);
+            edge.source.connectingEdge = edge;
             edge.source.setup = true;
             edge.hitSource = true;
         }
@@ -539,6 +525,7 @@ public class DungeonHallway {
             endPoint = GetClosestSegment(edge.sink, startPoint);
         } else {
             endPoint = GetPortalAdjacent(edge.sink);
+            edge.sink.connectingEdge = edge;
             edge.sink.setup = true;
             edge.hitSink = true;
         }
@@ -573,7 +560,9 @@ public class DungeonHallway {
 
             int pathCounter = 0;
             while ((xLeft != 0 || yLeft != 0 || zLeft != 0) && edge.path.Count() > 0 && pathCounter < 100) {
+                // Debug.Log("xLeft " + xLeft + " yLeft " + yLeft + " zLeft " + zLeft);
                 pathCounter++;
+                // Debug.Log("Good Direction " + GoodDirection(edge.directions.Last(), xLeft, yLeft, zLeft) + " pathcounter " + pathCounter);
                 if (tryForward && (GoodDirection(edge.directions.Last(), xLeft, yLeft, zLeft))) {
                     (tryForward, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft) = AttemptForward(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, edge.path.Last());
                     if (tryForward) {
@@ -606,7 +595,7 @@ public class DungeonHallway {
             // If it didn't and we are at min height/width give up
             // else shrink the tunnel width
             // if it did then set running to false and complete
-            if (edge.path.Count() == 0) {
+            if (edge.path.Count() == 0 || pathCounter >= 100) {
                 if (edge.height == 0 && edge.width == 0) {
                     Debug.Log("Failed to create path");
                     edge.connectable = false; // We should try to do something cooler than this
@@ -653,6 +642,7 @@ public class DungeonHallway {
                     setupEdges[edge] = true;
                     int[,,] hallwaySkeleton;
                     hallwaySkeleton = CreateEdgePath(superMap, edge);
+                    Debug.Log(edge.path.Count());
 
                     superMap = PlaceHallway(superMap, hallwaySkeleton);
                 }

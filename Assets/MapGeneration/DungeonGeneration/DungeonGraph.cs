@@ -148,11 +148,13 @@ public class DungeonGraph {
         List<(Portal, double)> cutoffs = new List<(Portal, double)>();
 
         foreach (Portal portal in superMap.portals) { // Could be made more efficient by tracking which portals are already in a different zone
-            double distance = Utils.Distance(portal.point, startPortal.point); // could put this calculate after the if startment to cut down on computation
-            // Check if it is within a reasonable distance, and the endpoint is not excluded, and the node either has no zone or is in the starts own zone
-            if (distance < superMap.sparsityFactor && !exclude.Contains(portal.node.id) && (portal.node.zone == -1 || portal.node.zone != startPortal.node.zone)) {
-                cutoffs.Add((portal, total));
-                total += Math.Pow(distance, superMap.portalDistanceFactor);
+            if (!portal.blocked) {
+                double distance = Utils.Distance(portal.point, startPortal.point); // could put this calculate after the if startment to cut down on computation
+                // Check if it is within a reasonable distance, and the endpoint is not excluded, and the node either has no zone or is in the starts own zone
+                if (distance < superMap.sparsityFactor && !exclude.Contains(portal.node.id) && (portal.node.zone == -1 || portal.node.zone != startPortal.node.zone)) {
+                    cutoffs.Add((portal, total));
+                    total += Math.Pow(distance, superMap.portalDistanceFactor);
+                }
             }
         }
         
@@ -317,9 +319,11 @@ public class DungeonGraph {
                         List<Tuple<Portal, double>> sourceCutoffs = new List<Tuple<Portal, double>>();
                         foreach(Node node in sourceZone.nodes) {
                             foreach(Portal portal in node.portals) {
-                                sourceCutoffs.Add(new Tuple<Portal, double>(portal, sourceTotal));
-                                // Weight it by the distance between the portal and the sink midpoint
-                                sourceTotal += Math.Pow(1.0 / Utils.Distance(sinkZone.midPoint, portal.point), superMap.portalDistanceFactor);
+                                if (!portal.blocked) {
+                                    sourceCutoffs.Add(new Tuple<Portal, double>(portal, sourceTotal));
+                                    // Weight it by the distance between the portal and the sink midpoint
+                                    sourceTotal += Math.Pow(1.0 / Utils.Distance(sinkZone.midPoint, portal.point), superMap.portalDistanceFactor);
+                                }   
                             }
                         }
 
@@ -328,9 +332,11 @@ public class DungeonGraph {
                         List<Tuple<Portal, double>> sinkCutoffs = new List<Tuple<Portal, double>>();
                         foreach(Node node in sinkZone.nodes) {
                             foreach(Portal portal in node.portals) {
-                                sinkCutoffs.Add(new Tuple<Portal, double>(portal, sinkTotal));
-                                // Weight it by the distane between the portal and the source midpoint
-                                sinkTotal += Math.Pow(1.0 / Utils.Distance(sourceZone.midPoint, portal.point), superMap.portalDistanceFactor);
+                                if (!portal.blocked) {
+                                    sinkCutoffs.Add(new Tuple<Portal, double>(portal, sinkTotal));
+                                    // Weight it by the distane between the portal and the source midpoint
+                                    sinkTotal += Math.Pow(1.0 / Utils.Distance(sourceZone.midPoint, portal.point), superMap.portalDistanceFactor);
+                                }
                             }
                         }
                         

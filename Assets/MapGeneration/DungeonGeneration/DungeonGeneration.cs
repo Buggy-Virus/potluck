@@ -47,6 +47,9 @@ public class DungeonGeneration {
             }
         }
 
+        // Mark blocked portals as blocked
+        superMap = DungeonRoom.MarkBlockedPortals(superMap);
+
         Debug.Log("Total Roomcount = " + superMap.roomCount.ToString());
         return superMap;
     }

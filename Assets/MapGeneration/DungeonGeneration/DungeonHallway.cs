@@ -95,48 +95,70 @@ public class DungeonHallway {
 
     static SuperMap DrawEdge(SuperMap superMap, Edge edge) {
         foreach(Point point in edge.path) {
-            superMap.skeleton = DrawSegmentDirection(superMap.skeleton, point, edge.height, edge.width, 1);
+            superMap.skeleton = DrawSegmentDirection(superMap.skeleton, point, edge, 1);
         }
 
         return superMap;
     }
 
+    static bool CheckEmpty(int[,,] map, Edge startEdge, Edge endEdge, Point a, Point b) {
+        if (a.x < 0 || a.y < 0 || a.z < 0 || b.x < 0 || b.y < 0 || b.z < 0 || 
+            a.x >= map.GetLength(0) || a.y >= map.GetLength(1) || a.z >= map.GetLength(2) ||
+            b.x >= map.GetLength(0) || b.y >= map.GetLength(1) || b.z >= map.GetLength(2)) {
+            return false;
+        }
+
+        for (int i = Math.Min(a.x, b.x); i <= Math.Max(a.x, b.x); i++) {
+            for (int j = Math.Min(a.y, b.y); j <= Math.Max(a.y, b.y); j++) {
+                for (int k = Math.Min(a.z, b.z); k <= Math.Max(a.z, b.z); k++) {
+                    Point point = new Point(i, j, k);
+                    if(map[i, j, k] != 0 && !startEdge.points.Contains(point) && !endEdge.points.Contains(point)) {
+                        Debug.Log("Conflict at x = " + i + " y = " + j + " z = " + k);
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
     // Set of methods to check whether space is empty in a specific direction off a point
-    delegate bool CheckDirectionMethod (int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current);
-    static bool CheckDirection1(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
+    delegate bool CheckDirectionMethod (int[,,] skeleton, bool[,,] pathPoints, Edge edge, Edge startEdge, Edge endEdge, Point current);
+    static bool CheckDirection1(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Edge startEdge, Edge endEdge, Point current) {
         Point point00 = new Point(current.x + 1, current.y, current.z - edge.width);
         Point point11 = new Point(current.x + 1, current.y + edge.height, current.z + edge.width);
-        return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x + 1, current.y, current.z];
+        return CheckEmpty(skeleton, startEdge, endEdge, point00, point11) && !pathPoints[current.x + 1, current.y, current.z];
     }
 
-    static bool CheckDirection2(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
+    static bool CheckDirection2(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Edge startEdge, Edge endEdge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y + 1, current.z - edge.width);
         Point point11 = new Point(current.x + edge.width, current.y + 1, current.z + edge.width);
-        return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x, current.y + 1, current.z];
+        return CheckEmpty(skeleton, startEdge, endEdge, point00, point11) && !pathPoints[current.x, current.y + 1, current.z];
     }
 
-    static bool CheckDirection3(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
+    static bool CheckDirection3(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Edge startEdge, Edge endEdge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y, current.z + 1);
         Point point11 = new Point(current.x + edge.width, current.y + edge.height, current.z + 1);
-        return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x, current.y, current.z + 1];
+        return CheckEmpty(skeleton, startEdge, endEdge, point00, point11) && !pathPoints[current.x, current.y, current.z + 1];
     }
 
-    static bool CheckDirection4(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
+    static bool CheckDirection4(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Edge startEdge, Edge endEdge, Point current) {
         Point point00 = new Point(current.x - 1, current.y, current.z - edge.width);
         Point point11 = new Point(current.x - 1, current.y + edge.height, current.z + edge.width);
-        return Utils.CheckEmpty(skeleton, point00, point11) && !pathPoints[current.x + 1, current.y, current.z];
+        return CheckEmpty(skeleton, startEdge, endEdge, point00, point11) && !pathPoints[current.x - 1, current.y, current.z];
     }
 
-    static bool CheckDirection5(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
+    static bool CheckDirection5(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Edge startEdge, Edge endEdge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y - 1, current.z - edge.width);
         Point point11 = new Point(current.x + edge.width, current.y - 1, current.z + edge.width);
-        return Utils.CheckEmpty(skeleton, point00, point11)  && !pathPoints[current.x, current.y - 1, current.z];
+        return CheckEmpty(skeleton, startEdge, endEdge, point00, point11)  && !pathPoints[current.x, current.y - 1, current.z];
     }
 
-    static bool CheckDirection6(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Point current) {
+    static bool CheckDirection6(int[,,] skeleton, bool[,,] pathPoints, Edge edge, Edge startEdge, Edge endEdge, Point current) {
         Point point00 = new Point(current.x - edge.width, current.y, current.z - 1);
         Point point11 = new Point(current.x + edge.width, current.y + edge.height, current.z - 1);
-        return Utils.CheckEmpty(skeleton, point00, point11)  && !pathPoints[current.x, current.y, current.z - 1];
+        return CheckEmpty(skeleton, startEdge, endEdge, point00, point11)  && !pathPoints[current.x, current.y, current.z - 1];
     }
 
     static List<CheckDirectionMethod> CheckDirections = new List<CheckDirectionMethod>() {
@@ -148,22 +170,22 @@ public class DungeonHallway {
         CheckDirection6 
     };
 
-    delegate int[,,] DrawSegmentMethod (int[,,] skeleton, Point point, int height, int width, int value);
+    delegate int[,,] DrawSegmentMethod (int[,,] skeleton, Point point, Edge edge, int value);
 
-    static int[,,] DrawSegmentDirection(int[,,] skeleton, Point point, int height, int width, int value) {
-        return DrawSegmentSkeleton(skeleton, point + new Point(-width, 0, -width), point + new Point(width, height, width), value);
+    static int[,,] DrawSegmentDirection(int[,,] skeleton, Point point, Edge edge, int value) {
+        return DrawSegmentSkeleton(skeleton, edge, point + new Point(-edge.width, 0, -edge.width), point + new Point(edge.width, edge.height, edge.width), value);
     }
 
-    static int[,,] DrawSegmentDirection14(int[,,] skeleton, Point point, int height, int width, int value) {
-        return DrawSegmentSkeleton(skeleton, point + new Point(0, 0, -width), point + new Point(0, height, width), value);
+    static int[,,] DrawSegmentDirection14(int[,,] skeleton, Point point, Edge edge, int value) {
+        return DrawSegmentSkeleton(skeleton, edge, point + new Point(0, 0, -edge.width), point + new Point(0, edge.height, edge.width), value);
     }
 
-    static int[,,] DrawSegmentDirection25(int[,,] skeleton, Point point, int height, int width, int value) {
-        return  DrawSegmentSkeleton(skeleton, point + new Point(-width, 0, -width), point + new Point(width, 0, width), value);
+    static int[,,] DrawSegmentDirection25(int[,,] skeleton, Point point, Edge edge, int value) {
+        return  DrawSegmentSkeleton(skeleton, edge, point + new Point(-edge.width, 0, -edge.width), point + new Point(edge.width, 0, edge.width), value);
     }
 
-    static int[,,] DrawSegmentDirection36(int[,,] skeleton, Point point, int height, int width, int value) {
-        return DrawSegmentSkeleton(skeleton, point + new Point(-width, 0, 0), point + new Point(width, height, 0), value);
+    static int[,,] DrawSegmentDirection36(int[,,] skeleton, Point point, Edge edge, int value) {
+        return DrawSegmentSkeleton(skeleton, edge, point + new Point(-edge.width, 0, 0), point + new Point(edge.width, edge.height, 0), value);
     }
 
     static List<DrawSegmentMethod> DrawSegments= new List<DrawSegmentMethod>() {
@@ -256,43 +278,43 @@ public class DungeonHallway {
         NextPoint6
     };
 
-    delegate int[,,] CapPathMethod (int[,,] skeleton, Point point, int height, int width, int value);
+    delegate int[,,] CapPathMethod (int[,,] skeleton, Edge edge, Point point, int height, int width, int value);
 
-    static int[,,] CapPath1(int[,,] skeleton, Point point, int height, int width, int value) {
+    static int[,,] CapPath1(int[,,] skeleton, Edge edge, Point point, int height, int width, int value) {
         for (int i = 1; i <= width; i++) {
-            skeleton = DrawSegmentDirection14(skeleton, point + new Point(i, 0, 0), height, width, value);
+            skeleton = DrawSegmentDirection14(skeleton, point + new Point(i, 0, 0), edge, value);
         }
         return skeleton;
     }
 
-    static int[,,] CapPath2(int[,,] skeleton, Point point, int height, int width, int value) {
+    static int[,,] CapPath2(int[,,] skeleton, Edge edge, Point point, int height, int width, int value) {
         for (int i = 1; i <= height; i++) {
-            skeleton = DrawSegmentDirection25(skeleton, point + new Point(0, i, 0), height, width, value);
+            skeleton = DrawSegmentDirection25(skeleton, point + new Point(0, i, 0), edge, value);
         }
         return skeleton;
     }
 
-    static int[,,] CapPath3(int[,,] skeleton, Point point, int height, int width, int value) {
+    static int[,,] CapPath3(int[,,] skeleton, Edge edge, Point point, int height, int width, int value) {
         for (int i = 1; i <= width; i++) {
-            skeleton = DrawSegmentDirection36(skeleton, point + new Point(0, 0, i), height, width, value);
+            skeleton = DrawSegmentDirection36(skeleton, point + new Point(0, 0, i), edge, value);
         }
         return skeleton;
     }
 
-    static int[,,] CapPath4(int[,,] skeleton, Point point, int height, int width, int value) {
+    static int[,,] CapPath4(int[,,] skeleton, Edge edge, Point point, int height, int width, int value) {
         for (int i = 1; i <= width; i++) {
-            skeleton = DrawSegmentDirection14(skeleton, point + new Point(-i, 0, 0), height, width, value);
+            skeleton = DrawSegmentDirection14(skeleton, point + new Point(-i, 0, 0), edge, value);
         }
         return skeleton;
     }
 
-    static int[,,] CapPath5(int[,,] skeleton, Point point, int height, int width, int value) {
+    static int[,,] CapPath5(int[,,] skeleton, Edge edge, Point point, int height, int width, int value) {
         return skeleton;
     }
 
-    static int[,,] CapPath6(int[,,] skeleton, Point point, int height, int width, int value) {
+    static int[,,] CapPath6(int[,,] skeleton, Edge edge, Point point, int height, int width, int value) {
         for (int i = 1; i <= width; i++) {
-            skeleton = DrawSegmentDirection36(skeleton, point + new Point(0, 0, -i), height, width, value);
+            skeleton = DrawSegmentDirection36(skeleton, point + new Point(0, 0, -i), edge, value);
         }
         return skeleton;
     }
@@ -306,11 +328,18 @@ public class DungeonHallway {
         CapPath6
     };
 
-    static int[,,] DrawSegmentSkeleton(int[,,] hallwaySkeleton, Point a, Point b, int value) {
+    static int[,,] DrawSegmentSkeleton(int[,,] hallwaySkeleton, Edge edge, Point a, Point b, int value) {
         for (int i = Math.Min(a.x, b.x); i <= Math.Max(a.x, b.x); i++) {
             for (int j = Math.Min(a.y, b.y); j <= Math.Max(a.y, b.y); j++) {
                 for (int k = Math.Min(a.z, b.z); k <= Math.Max(a.z, b.z); k++) {
                     hallwaySkeleton[i, j, k] += value;
+                    int newValue = hallwaySkeleton[i, j, k];
+                    Point point = new Point(i, j, k);
+                    if (newValue > 0 && !edge.points.Contains(point)) {
+                        edge.points.Add(point);
+                    } else if (newValue <= 0 && edge.points.Contains(point)) {
+                        edge.points.Remove(point);
+                    }
                 }
             }
         }
@@ -331,15 +360,15 @@ public class DungeonHallway {
     }
 
     // Try for a path to move forward
-    static (bool, Edge, int[,,], bool[,,], int, int, int) AttemptForward(SuperMap superMap, Edge edge, int[,,] hallwaySkeleton, bool[,,] hallwayPoints, int xLeft, int yLeft, int zLeft, Point endPoint) {
+    static (bool, Edge, int[,,], bool[,,], int, int, int) AttemptForward(SuperMap superMap, Edge edge, int[,,] hallwaySkeleton, bool[,,] hallwayPoints, Edge endEdge, Edge startEdge, int xLeft, int yLeft, int zLeft, Point endPoint) {
         bool wentForward = true;
         Point current = edge.path.Last();
         int direction = edge.directions.Last();
         // Check the durrent direction, and try to go forward. If it goes forward we update wentForward
-        if (CheckDirections[direction - 1](superMap.skeleton, hallwayPoints, edge, current)) {
+        if (CheckDirections[direction - 1](superMap.skeleton, hallwayPoints, edge, startEdge, endEdge, current)) {
             int directionIndex = direction - 1;
             Point newPoint = NextPointMethods[directionIndex](current);
-            hallwaySkeleton = DrawSegmentDirection(hallwaySkeleton, newPoint, edge.height, edge.width, 1);
+            hallwaySkeleton = DrawSegmentDirection(hallwaySkeleton, newPoint, edge, 1);
             (xLeft, yLeft, zLeft) = UpdateDistancesMethods[directionIndex](xLeft, yLeft, zLeft);
             edge.path.Add(newPoint);
             hallwayPoints = FlipPoint(hallwayPoints, newPoint);
@@ -353,7 +382,7 @@ public class DungeonHallway {
     }
 
     // Try for a point to turn
-    static (bool, Edge, int[,,], bool[,,], int, int, int, Dictionary<Point, List<int>>) AttemptTurn(SuperMap superMap, Edge edge, int[,,] hallwaySkeleton, bool[,,] hallwayPoints, int xLeft, int yLeft, int zLeft, bool favorable, Dictionary<Point, List<int>> failedTurns) {
+    static (bool, Edge, int[,,], bool[,,], int, int, int, Dictionary<Point, List<int>>) AttemptTurn(SuperMap superMap, Edge edge, int[,,] hallwaySkeleton, bool[,,] hallwayPoints, Edge endEdge, Edge startEdge, int xLeft, int yLeft, int zLeft, bool favorable, Dictionary<Point, List<int>> failedTurns) {
         Point current = edge.path.Last();
         int direction = edge.directions.Last();
 
@@ -367,7 +396,7 @@ public class DungeonHallway {
 
         if (favorable) {
             for (int i = 0; i < turnScores.Count(); i++) {
-                if (turnScores[i] <= 0) {
+                if (turnScores[i] <= 0 && turnScores[i] != int.MinValue) {
                     turnScores[i] = int.MinValue;
                     availableDirections -= 1;
                 }
@@ -398,7 +427,7 @@ public class DungeonHallway {
             }
             
             // check if we can turn in the direction of the best available direction
-            if (CheckDirections[maxIndex](superMap.skeleton, hallwayPoints, edge, current)) {
+            if (CheckDirections[maxIndex](superMap.skeleton, hallwayPoints, edge, startEdge, endEdge, current)) {
                 // If so, we found a turn and update the direction, and move the path
                 // one unit in the new direction
                 foundTurn = true;
@@ -406,7 +435,7 @@ public class DungeonHallway {
                 Point next = NextPointMethods[maxIndex](current);
                 edge.path.Add(next);
                 hallwayPoints = FlipPoint(hallwayPoints, next);
-                hallwaySkeleton = DrawSegmentDirection(hallwaySkeleton, next, edge.height, edge.width, 1);
+                hallwaySkeleton = DrawSegmentDirection(hallwaySkeleton, next, edge, 1);
                 (xLeft, yLeft, zLeft) = UpdateDistancesMethods[maxIndex](xLeft, yLeft, zLeft);
             } else {
                 // Otherwise that's one less available direction, and we don't check
@@ -420,6 +449,10 @@ public class DungeonHallway {
                     failedTurns[current] = new List<int>() {maxIndex + 1};
                 }
             }
+        }
+
+        if (foundTurn && favorable) {
+            Debug.Log("Found Favorable Turn");
         }
 
         return (foundTurn, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns);
@@ -444,7 +477,7 @@ public class DungeonHallway {
             }
         }
 
-        hallwaySkeleton = DrawSegmentDirection(hallwaySkeleton, lastPoint, edge.height, edge.width, -1);
+        hallwaySkeleton = DrawSegmentDirection(hallwaySkeleton, lastPoint, edge, -1);
         (xLeft, yLeft, zLeft) = UpdateDistancesMethods[(lastDirection + 3) % 6](xLeft, yLeft, zLeft);
         hallwayPoints = FlipPoint(hallwayPoints, lastPoint);
         edge.path.RemoveAt(edge.path.Count() - 1);
@@ -455,13 +488,21 @@ public class DungeonHallway {
 
     // Return if the current direction is bringing the path closer to the end
     static bool GoodDirection(int direction, int xLeft, int yLeft, int zLeft) {
-        bool result = (direction != 1 || xLeft > 0);
-        result &= (direction != 2 || yLeft > 0);
-        result &= (direction != 3 || zLeft > 0);
-        result &= (direction != 4 || xLeft < 0);
-        result &= (direction != 5 || yLeft < 0);
-        result &= (direction != 6 || zLeft < 0);
-        return result;
+        return (direction == 1 && xLeft > 0) || 
+               (direction == 2 && yLeft > 0) || 
+               (direction == 3 && zLeft > 0) || 
+               (direction == 4 && xLeft < 0) || 
+               (direction == 5 && yLeft < 0) ||
+               (direction == 6 && zLeft < 0);
+    }
+
+    static bool GoodAdjacent(int direction, int xLeft, int yLeft, int zLeft) {
+        return (direction == 1 && (yLeft != 0 || zLeft != 0)) || 
+               (direction == 2 && (xLeft != 0 || zLeft != 0)) || 
+               (direction == 3 && (xLeft != 0 || yLeft != 0)) || 
+               (direction == 4 && (yLeft != 0 || zLeft != 0)) || 
+               (direction == 5 && (xLeft != 0 || zLeft != 0)) ||
+               (direction == 6 && (xLeft != 0 || yLeft != 0));
     }
 
     static Point GetClosestSegment(Portal portal, Point point) {
@@ -504,7 +545,9 @@ public class DungeonHallway {
         bool[,,] hallwayPoints;
 
         Point startPoint = new Point();
+        Edge startEdge = new Edge();
         Point endPoint = new Point();
+        Edge endEdge = new Edge();
         int startDirect = edge.source.direction;
 
         // If the source edge is already setup
@@ -513,6 +556,7 @@ public class DungeonHallway {
         // point with the minimum distance between that edge on the sink portal the start point
         if (edge.source.setup) {
             startPoint = GetClosestSegment(edge.source, edge.sink.point);
+            startEdge = edge.source.connectingEdge;
         } else {
             startPoint = GetPortalAdjacent(edge.source);
             edge.source.connectingEdge = edge;
@@ -523,6 +567,7 @@ public class DungeonHallway {
         // Similar thing with the sink portal
         if (edge.sink.setup) {
             endPoint = GetClosestSegment(edge.sink, startPoint);
+            endEdge = edge.sink.connectingEdge;
         } else {
             endPoint = GetPortalAdjacent(edge.sink);
             edge.sink.connectingEdge = edge;
@@ -545,7 +590,7 @@ public class DungeonHallway {
             hallwayPoints = new bool[superMap.xSize,superMap.ySize,superMap.zSize];
             edge.path.Add(startPoint);
             edge.directions.Add(edge.source.direction);
-            hallwaySkeleton =  DrawSegments[edge.source.direction - 1](hallwaySkeleton, startPoint, edge.height, edge.width, 1);
+            hallwaySkeleton =  DrawSegments[edge.source.direction - 1](hallwaySkeleton, startPoint, edge, 1);
             hallwayPoints = FlipPoint(hallwayPoints, startPoint);
 
             // Set the distance left until we reach our goal
@@ -559,33 +604,45 @@ public class DungeonHallway {
             Dictionary<Point, List<int>> failedTurns = new Dictionary<Point, List<int>>();
 
             int pathCounter = 0;
-            while ((xLeft != 0 || yLeft != 0 || zLeft != 0) && edge.path.Count() > 0 && pathCounter < 100) {
-                // Debug.Log("xLeft " + xLeft + " yLeft " + yLeft + " zLeft " + zLeft);
+            while ((xLeft != 0 || yLeft != 0 || zLeft != 0) && edge.path.Count() > 0 && pathCounter < 200) {
+                Debug.Log("xLeft " + xLeft + " yLeft " + yLeft + " zLeft " + zLeft);
                 pathCounter++;
-                // Debug.Log("Good Direction " + GoodDirection(edge.directions.Last(), xLeft, yLeft, zLeft) + " pathcounter " + pathCounter);
-                if (tryForward && (GoodDirection(edge.directions.Last(), xLeft, yLeft, zLeft))) {
-                    (tryForward, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft) = AttemptForward(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, edge.path.Last());
+                if (tryForward && GoodDirection(edge.directions.Last(), xLeft, yLeft, zLeft)) {
+                    Debug.Log("Good TF");
+                    (tryForward, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft) = AttemptForward(superMap, edge, hallwaySkeleton, hallwayPoints, endEdge, startEdge, xLeft, yLeft, zLeft, edge.path.Last());
                     if (tryForward) {
                         tryFavorableTurn = true;
                         tryTurn = true;
                     }
                 } else if (tryFavorableTurn) {
-                    (tryFavorableTurn, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns) = AttemptTurn(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, true, failedTurns);
+                    Debug.Log("Good TT");
+                    (tryFavorableTurn, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns) = AttemptTurn(superMap, edge, hallwaySkeleton, hallwayPoints, endEdge, startEdge, xLeft, yLeft, zLeft, true, failedTurns);
                     if (tryFavorableTurn) {
                         tryForward = true;
                     }
+                } else if (tryForward && GoodAdjacent(edge.directions.Last(), xLeft, yLeft, zLeft)) {
+                    Debug.Log("OK TF");
+                    (tryForward, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft) = AttemptForward(superMap, edge, hallwaySkeleton, hallwayPoints, endEdge, startEdge, xLeft, yLeft, zLeft, edge.path.Last());
+                    if (tryForward) {
+                        tryFavorableTurn = true;
+                        tryTurn = true;
+                    }
                 } else if (tryTurn) {
-                    (tryTurn, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns) = AttemptTurn(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, false, failedTurns);
+                    Debug.Log("TT");
+                    (tryTurn, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns) = AttemptTurn(superMap, edge, hallwaySkeleton, hallwayPoints, endEdge, startEdge, xLeft, yLeft, zLeft, false, failedTurns);
                     if (tryTurn) {
+                        tryFavorableTurn = true;
                         tryForward = true;
                     }
                 } else if (tryForward) {
-                    (tryForward, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft) = AttemptForward(superMap, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, edge.path.Last());
+                    Debug.Log("TF");
+                    (tryForward, edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft) = AttemptForward(superMap, edge, hallwaySkeleton, hallwayPoints, endEdge, startEdge, xLeft, yLeft, zLeft, edge.path.Last());
                     if (tryForward) {
                         tryFavorableTurn = true;
                         tryTurn = true;
                     }
                 } else {
+                    Debug.Log("Backtrack");
                     (edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns) = BackTrack(edge, hallwaySkeleton, hallwayPoints, xLeft, yLeft, zLeft, failedTurns);
                     tryTurn = true;
                 }
@@ -642,7 +699,6 @@ public class DungeonHallway {
                     setupEdges[edge] = true;
                     int[,,] hallwaySkeleton;
                     hallwaySkeleton = CreateEdgePath(superMap, edge);
-                    Debug.Log(edge.path.Count());
 
                     superMap = PlaceHallway(superMap, hallwaySkeleton);
                 }

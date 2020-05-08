@@ -4,20 +4,38 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public struct Edge {
+public class Edge {
     public Portal source;
     public Portal sink;
     public int length;
     public int width;
     public int height;
-    public List<Point> path; // THIS SHOULD BE A TUPLE
-    public List<int> directions; // THIS SHOULD BE A TUPLE
+    public List<Point> path;
+    public HashSet<Point> points;
+    public List<int> directions;
     public bool hitSource;
     public bool hitSink;
     public bool connectable;
     public int type;
     public int conditional;
     public int key;
+
+    public Edge() {
+        this.source = new Portal();
+        this.sink = new Portal();
+        this.type = 0;
+        this.width = 0;
+        this.height = 0;
+        this.connectable = false;
+        this.hitSource = false;
+        this.hitSink = false;
+        this.length = 0;
+        this.conditional = 0;
+        this.key = 0;
+        this.path = new List<Point>();
+        this.points = new HashSet<Point>();
+        this.directions = new List<int>();
+    }
 
     public Edge(Portal source, Portal sink) {
         this.source = source;
@@ -31,8 +49,9 @@ public struct Edge {
         this.length = 0;
         this.conditional = 0;
         this.key = 0;
-        path = new List<Point>();
-        directions = new List<int>();
+        this.path = new List<Point>();
+        this.points = new HashSet<Point>();
+        this.directions = new List<int>();
         source.node.edges.Add(this);
         sink.node.edges.Add(this);
         source.edges.Add(this);

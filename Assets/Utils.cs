@@ -52,4 +52,24 @@ public class Utils {
 
         return true;
     }
+
+    public static (int[,,], bool) transpose(int[,,] map, int x, int y, int z) {
+        int[,,] transposedMap = new int[map.GetLength(0),map.GetLength(1),map.GetLength(2)]; 
+
+        for (int i = 0; i < map.GetLength(0); i++) {
+            for (int j = 0; j < map.GetLength(1); j++) {
+                for (int k = 0; k < map.GetLength(2); k++) {
+                    if (map[i,j,k] != 0) {
+                        if (i + x >= map.GetLength(0) || j + y >= map.GetLength(1) || k + z >= map.GetLength(2)) {
+                            return (map, false);
+                        } else {
+                            transposedMap[i + x, j + y, k + z] = map[i, j, k];
+                        }
+                    }
+                }
+            }
+        }
+
+        return (transposedMap, true);
+    } 
 }

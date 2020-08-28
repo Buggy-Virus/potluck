@@ -68,6 +68,9 @@ public class SuperMap {
     // The skeleton of the map
     // After being painted represents the real map
     public int[,,] skeleton;
+    public int[,,] xWallSkeleton;
+    public int[,,] yWallSkeleton;
+    public int[,,] zWallSkeleton;
 
     // Sets of nodes within the dungeon that are naively connected
     public List<Zone> zones;
@@ -133,6 +136,9 @@ public class SuperMap {
         this.roomCounts = new Dictionary<int, int>();
 
         this.skeleton = new int[xSize, ySize, zSize];
+        this.xWallSkeleton = new int[xSize + 1, ySize, zSize];
+        this.xWallSkeleton = new int[xSize, ySize + 1, zSize];
+        this.xWallSkeleton = new int[xSize, ySize, zSize + 1];
 
         this.zones = new List<Zone>();
         this.rooms = new List<Room>();
